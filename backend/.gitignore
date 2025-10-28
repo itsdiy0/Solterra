@@ -1,0 +1,30 @@
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environment variables
+.env
+
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Alembic
+alembic/versions/*.pyc
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
