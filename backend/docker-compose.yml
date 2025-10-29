@@ -9,7 +9,6 @@ services:
       POSTGRES_USER: rose_user
       POSTGRES_PASSWORD: rose_password
       POSTGRES_DB: rose_db
-      POSTGRES_INITDB_ARGS: "-E UTF8"
     ports:
       - "5432:5432"
     volumes:
