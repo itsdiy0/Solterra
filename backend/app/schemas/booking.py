@@ -3,10 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 
-# ============================================================
 # BOOKING SCHEMAS
-# ============================================================
-
 class CreateBookingRequest(BaseModel):
     """Request schema for creating a booking"""
     event_id: str = Field(..., min_length=1)
