@@ -7,6 +7,9 @@ from alembic import context
 from app.config import settings
 from app.database import Base
 
+# Import all models so Alembic can detect them
+from app.models import Participant, Admin, Event, Booking, OTPCode
+
 # this is the Alembic Config object
 config = context.config
 
