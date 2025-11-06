@@ -2,6 +2,7 @@ import random
 import string
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from fastapi import HTTPException, status
 from app.models import Booking, Event, Participant
 
@@ -10,7 +11,8 @@ def generate_booking_reference(length: int = 6) -> str:
     """Generate a unique booking reference like ROSE-XXXXXX"""
     code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
     return f"ROSE-{code}"
-print(generate_booking_reference())
+
+#print(generate_booking_reference())
 
 
 def create_booking(db: Session, participant_id: str, event_id: str) -> Booking:
@@ -54,6 +56,31 @@ def create_booking(db: Session, participant_id: str, event_id: str) -> Booking:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create booking")
 
+    return booking
+
+
+def cancel_booking(db: Session, booking_id: str) -> Booking:
+    """
+    Cancel a booking and release the slot
+    """
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.booking_status == "cancelled":
+        raise HTTPException(status_code=400, detail="Booking already cancelled")
+
+    # Lock the event row to safely increment slot
+    event = db.query(Event).filter(Event.id == booking.event_id).with_for_update().first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    booking.booking_status = "cancelled"
+    booking.cancelled_at = func.now() 
+    event.available_slots += 1
+
+    db.commit()
+    db.refresh(booking)
     return booking
 
 
