@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
+
     container_name: rose_postgres
     restart: unless-stopped
     environment:

@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     class Config:
-        env_file = ".env"
+        #env_file = ".env"
+        #switch to local for development
+        env_file = ".env.local"
 
 
 settings = Settings()
