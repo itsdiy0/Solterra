@@ -2,9 +2,10 @@ import random
 import string
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func
+from sqlalchemy import func,case
 from fastapi import HTTPException, status
 from app.models import Booking, Event, Participant
+
 
 
 def generate_booking_reference(length: int = 6) -> str:
@@ -84,3 +85,35 @@ def cancel_booking(db: Session, booking_id: str) -> Booking:
     return booking
 
 
+def get_user_bookings(db: Session, participant_id: str):
+    """
+    Get all bookings for a participant, with confirmed ones first.
+    Returns a structured dict with active and cancelled bookings.
+    """
+    bookings = (
+        db.query(Booking)
+        .filter(Booking.participant_id == participant_id)
+        .order_by(
+            # Confirmed first, cancelled after
+            Booking.booking_status.desc(),  
+            Booking.booked_at.desc()
+        )
+        .all()
+    )
+
+    # Separate confirmed (active) and cancelled bookings
+    active_bookings = [b for b in bookings if b.booking_status == "confirmed"]
+    cancelled_bookings = [b for b in bookings if b.booking_status == "cancelled"]
+
+    if not active_bookings:
+        return {
+            "message": "No active bookings found.",
+            "active_bookings": [],
+            "cancelled_bookings": cancelled_bookings
+        }
+
+    return {
+        "message": f"{len(active_bookings)} active booking(s) found.",
+        "active_bookings": active_bookings,
+        "cancelled_bookings": cancelled_bookings
+    }
