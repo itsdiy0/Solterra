@@ -62,6 +62,8 @@ def get_my_bookings(
 # ----------------------------
 # Create a new booking
 # ----------------------------
+from sqlalchemy.orm import joinedload
+
 @router.post("/bookings", response_model=BookingWithEventResponse)
 def book_event(
     request: CreateBookingRequest,
@@ -73,7 +75,18 @@ def book_event(
     # Ensure event relationship is loaded
     booking = db.query(Booking).options(joinedload(Booking.event)).filter_by(id=booking.id).first()
     
-    return BookingWithEventResponse(booking=booking, message="Booking confirmed.")
+    # Convert event to dict for Pydantic v2
+    booking_data = BookingResponse(
+        id=str(booking.id),
+        booking_reference=booking.booking_reference,
+        booking_status=booking.booking_status,
+        booked_at=booking.booked_at,
+        cancelled_at=booking.cancelled_at,
+        event=EventResponse.from_orm(booking.event).model_dump()  # <-- convert to dict
+    )
+    
+    return BookingWithEventResponse(booking=booking_data, message="Booking confirmed.")
+
 
 
 # ----------------------------
