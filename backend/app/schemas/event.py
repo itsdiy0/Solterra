@@ -2,12 +2,13 @@ from pydantic import BaseModel, Field, validator
 from typing import Optional
 from datetime import date, time, datetime
 from decimal import Decimal
+from uuid import UUID
 
 
 # EVENT SCHEMAS
 class EventResponse(BaseModel):
     """Response schema for event data"""
-    id: str
+    id: UUID
     name: str
     event_date: date
     event_time: time
