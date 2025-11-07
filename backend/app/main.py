@@ -1,6 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers import admin_auth, admin_routes
+from app.routers import participant_auth, participant_routes
+
+
+
+
+
+
+
+
 app = FastAPI(
     title="ROSE Event Management API",
     description="API for ROSE Foundation mobile health screening events",
@@ -29,3 +39,8 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+app.include_router(admin_auth.router)
+app.include_router(admin_routes.router)
+app.include_router(participant_auth.router)
+app.include_router(participant_routes.router)
