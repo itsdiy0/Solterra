@@ -48,7 +48,6 @@ export default function AdminRegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50 to-white p-4">
-      {/* Green header bar */}
       <div className="absolute top-0 left-0 right-0 h-32 bg-emerald-500" />
       
       <Card className="w-full max-w-md relative z-10 shadow-xl">
@@ -59,7 +58,6 @@ export default function AdminRegisterPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input
@@ -73,7 +71,6 @@ export default function AdminRegisterPage() {
               />
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">ROSE Email Address</Label>
               <Input
@@ -87,7 +84,6 @@ export default function AdminRegisterPage() {
               />
             </div>
 
-            {/* Telephone */}
             <div className="space-y-2">
               <Label htmlFor="phone">Telephone Number</Label>
               <Input
@@ -101,7 +97,6 @@ export default function AdminRegisterPage() {
               />
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -115,7 +110,6 @@ export default function AdminRegisterPage() {
               />
             </div>
 
-            {/* Terms Checkbox */}
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="terms"
@@ -137,14 +131,12 @@ export default function AdminRegisterPage() {
               </label>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
 
-            {/* Create Button */}
             <Button
               type="submit"
               disabled={loading || !agreedToTerms}
@@ -156,7 +148,6 @@ export default function AdminRegisterPage() {
         </CardContent>
       </Card>
 
-      {/* Bottom green bar */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-emerald-500" />
     </div>
   );
