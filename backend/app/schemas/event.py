@@ -19,7 +19,7 @@ class EventResponse(BaseModel):
     available_slots: int
     additional_info: Optional[str] = None
     status: str
-    created_by: Optional[str] = None
+    created_by: Optional[UUID] = None
     created_at: datetime
 
     class Config:
