@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 # BOOKING SCHEMAS
@@ -18,7 +19,7 @@ class CreateBookingRequest(BaseModel):
 
 class BookingResponse(BaseModel):
     """Response schema for booking data"""
-    id: str
+    id: UUID
     booking_reference: str
     booking_status: str
     booked_at: datetime
