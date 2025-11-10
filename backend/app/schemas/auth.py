@@ -3,11 +3,7 @@ from typing import Optional
 from datetime import datetime
 import re
 
-
-# ============================================================
 # PARTICIPANT SCHEMAS
-# ============================================================
-
 class ParticipantRegisterRequest(BaseModel):
     """Request schema for participant registration"""
     name: str = Field(..., min_length=1, max_length=255)
@@ -136,10 +132,7 @@ class ParticipantResponse(BaseModel):
         }
 
 
-# ============================================================
 # ADMIN SCHEMAS
-# ============================================================
-
 class AdminRegisterRequest(BaseModel):
     """Request schema for admin registration"""
     name: str = Field(..., min_length=1, max_length=255)
@@ -219,10 +212,7 @@ class AdminResponse(BaseModel):
         }
 
 
-# ============================================================
 # TOKEN SCHEMAS
-# ============================================================
-
 class TokenResponse(BaseModel):
     """Response schema for authentication tokens"""
     access_token: str
@@ -257,10 +247,7 @@ class OTPResponse(BaseModel):
         }
 
 
-# ============================================================
 # ERROR SCHEMAS
-# ============================================================
-
 class ErrorResponse(BaseModel):
     """Standard error response schema"""
     detail: str
