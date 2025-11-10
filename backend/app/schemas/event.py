@@ -4,10 +4,7 @@ from datetime import date, time, datetime
 from decimal import Decimal
 
 
-# ============================================================
 # EVENT SCHEMAS
-# ============================================================
-
 class EventResponse(BaseModel):
     """Response schema for event data"""
     id: str
