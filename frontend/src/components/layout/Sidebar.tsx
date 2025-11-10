@@ -25,7 +25,7 @@ export default function Sidebar() {
           <button
             key={item.path}
             onClick={() => router.push(item.path)}
-            className={`flex flex-col items-center gap-1 p-3 rounded-lg transition-colors ${
+            className={`flex font-bold flex-col items-center gap-1 p-3 rounded-lg transition-colors ${
               isActive 
                 ? 'bg-white/20 text-white' 
                 : 'text-white/70 hover:text-white hover:bg-white/10'
