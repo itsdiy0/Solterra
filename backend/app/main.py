@@ -1,15 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from app.routers import admin_auth, admin_routes
 from app.routers import participant_auth, participant_routes
-
-
-
-
-
-
-
 
 app = FastAPI(
     title="ROSE Event Management API",
@@ -26,7 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 def read_root():
     return {
@@ -34,7 +25,6 @@ def read_root():
         "version": "1.0.0",
         "status": "running"
     }
-
 
 @app.get("/health")
 def health_check():
