@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import admin_auth, admin_routes
 from app.routers import participant_auth, participant_routes
+from app.routers import event
 
 
 
@@ -44,3 +45,4 @@ app.include_router(admin_auth.router)
 app.include_router(admin_routes.router)
 app.include_router(participant_auth.router)
 app.include_router(participant_routes.router)
+app.include_router(event.router)
