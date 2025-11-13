@@ -4,9 +4,15 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
 import uuid
 from datetime import datetime
-
+import enum
 from app.database import Base
 
+# --------------------------------------------------------
+# ENUM CLASS
+# --------------------------------------------------------
+class EventStatus(str, enum.Enum):
+    draft = "draft"
+    published = "published"
 
 class Event(Base):
     __tablename__ = "events"

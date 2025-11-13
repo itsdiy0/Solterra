@@ -22,7 +22,7 @@ export default function AdminRegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!agreedToTerms) {
       setError('Please agree to Terms and Conditions');
       return;
@@ -32,16 +32,35 @@ export default function AdminRegisterPage() {
     setError('');
 
     try {
-      // TODO: Connect to backend API
-      console.log('Registration attempt:', formData);
-      
-      // Mock success
-      setTimeout(() => {
-        alert('Registration successful! (Mock)');
-        router.push('/admin/login');
-      }, 1000);
-    } catch (err) {
-      setError('Registration failed');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.detail?.[0]?.msg || 'Registration failed');
+      }
+
+      const data = await response.json();
+      console.log('Registration success:', data);
+
+      // Optional: Store token or user info if needed
+      // localStorage.setItem('access_token', data.access_token);
+
+      alert('Registration successful!');
+      router.push('/admin/login');
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
+    } finally {
       setLoading(false);
     }
   };
@@ -49,7 +68,7 @@ export default function AdminRegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50 to-white p-4">
       <div className="absolute top-0 left-0 right-0 h-32 bg-emerald-500" />
-      
+
       <Card className="w-full max-w-md relative z-10 shadow-xl">
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-2xl font-bold">Sign up</CardTitle>
@@ -65,7 +84,7 @@ export default function AdminRegisterPage() {
                 type="text"
                 placeholder="Enter full name"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 className="h-11"
               />
@@ -78,7 +97,7 @@ export default function AdminRegisterPage() {
                 type="email"
                 placeholder="Enter ROSE email address"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 className="h-11"
               />
@@ -91,7 +110,7 @@ export default function AdminRegisterPage() {
                 type="tel"
                 placeholder="Enter telephone number"
                 value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
                 className="h-11"
               />
@@ -104,7 +123,7 @@ export default function AdminRegisterPage() {
                 type="password"
                 placeholder="Create a password"
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 className="h-11"
               />

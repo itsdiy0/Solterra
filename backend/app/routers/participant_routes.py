@@ -13,7 +13,7 @@ from app.schemas.booking import (
     BookingResponse
 )
 from app.schemas.participant_schemas import ParticipantResponse
-from app.services.booking_service import create_booking, cancel_booking, get_user_bookings
+from app.services.booking_service import create_booking, cancel_booking
 
 router = APIRouter(prefix="/participant", tags=["Participant"])
 
@@ -28,55 +28,53 @@ def get_my_bookings(
     db: Session = Depends(get_db),
     current_user: Participant = Depends(get_current_participant)
 ):
-    """
-    Get all bookings for the current participant.
-    Converts SQLAlchemy objects to Pydantic models.
-    """
     bookings = db.query(Booking).options(joinedload(Booking.event)).filter(
         Booking.participant_id == current_user.id
     ).all()
 
-    booking_list = []
-    for b in bookings:
-        booking_list.append(
-            BookingResponse(
-                id=str(b.id),  # Convert UUID to string
-                booking_reference=b.booking_reference,
-                booking_status=b.booking_status,
-                booked_at=b.booked_at,
-                cancelled_at=b.cancelled_at,
-                event=EventResponse.from_orm(b.event).model_dump()  # Convert Pydantic model to dict
-            )
+    return [
+        BookingResponse(
+            id=str(b.id),
+            booking_reference=b.booking_reference,
+            booking_status=b.booking_status,
+            booked_at=b.booked_at,
+            cancelled_at=b.cancelled_at,
+            event=EventResponse.from_orm(b.event).model_dump()
         )
-    
-    return booking_list
+        for b in bookings
+    ]
 
-    
-from sqlalchemy.orm import joinedload
 
+# ----------------------------
+# Create a new booking
+# ----------------------------
 @router.post("/bookings", response_model=BookingWithEventResponse)
 def book_event(
     request: CreateBookingRequest,
     db: Session = Depends(get_db),
     current_user: Participant = Depends(get_current_participant)
 ):
-    booking = create_booking(db, participant_id=current_user.id, event_id=request.event_id)
+    # Pass participant phone to service for SMS
+    booking = create_booking(
+        db,
+        participant_id=current_user.id,
+        participant_phone=current_user.phone_number,  # <-- Add phone number here
+        event_id=request.event_id
+    )
     
     # Ensure event relationship is loaded
     booking = db.query(Booking).options(joinedload(Booking.event)).filter_by(id=booking.id).first()
     
-    # Convert event to dict for Pydantic v2
     booking_data = BookingResponse(
         id=str(booking.id),
         booking_reference=booking.booking_reference,
         booking_status=booking.booking_status,
         booked_at=booking.booked_at,
         cancelled_at=booking.cancelled_at,
-        event=EventResponse.from_orm(booking.event).model_dump()  # <-- convert to dict
+        event=EventResponse.from_orm(booking.event).model_dump()
     )
     
     return BookingWithEventResponse(booking=booking_data, message="Booking confirmed.")
-
 
 
 # ----------------------------
@@ -88,7 +86,12 @@ def cancel_my_booking(
     db: Session = Depends(get_db),
     current_user: Participant = Depends(get_current_participant)
 ):
-    booking = cancel_booking(db, booking_id)
+    # Pass participant phone to service for SMS
+    booking = cancel_booking(
+        db,
+        booking_id,
+        participant_phone=current_user.phone_number  # <-- Add phone number here
+    )
 
     if booking.participant_id != current_user.id:
         raise HTTPException(status_code=403, detail="Cannot cancel a booking that is not yours")

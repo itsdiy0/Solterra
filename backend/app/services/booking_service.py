@@ -4,6 +4,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException
 from app.models import Booking, Event
+from app.services.sms_service import (
+    send_booking_confirmation_sms,
+    send_booking_cancellation_sms,
+)
 
 
 def generate_booking_reference(length: int = 6) -> str:
@@ -12,17 +16,12 @@ def generate_booking_reference(length: int = 6) -> str:
     return f"ROSE-{code}"
 
 
-def create_booking(db: Session, participant_id: str, event_id: str) -> Booking:
+def create_booking(db: Session, participant_id: str, participant_phone: str, event_id: str) -> Booking:
     """
-    Create a booking atomically.
-    
-    Raises HTTPException if:
-    - Event not found
-    - Participant already booked this event
-    - No slots available
+    Create a booking atomically and send mock SMS confirmation.
     """
     try:
-        # Lock the event row to prevent race conditions
+        # Lock event row to prevent race conditions
         event = db.query(Event).filter(Event.id == event_id).with_for_update().first()
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
@@ -42,7 +41,7 @@ def create_booking(db: Session, participant_id: str, event_id: str) -> Booking:
         # Decrement available slots
         event.available_slots -= 1
 
-        # Generate unique booking reference with retry logic
+        # Generate unique booking reference
         booking_ref = None
         for _ in range(5):
             ref = generate_booking_reference()
@@ -63,6 +62,19 @@ def create_booking(db: Session, participant_id: str, event_id: str) -> Booking:
         db.add(booking)
         db.commit()
         db.refresh(booking)
+
+        # Send booking confirmation (mock mode)
+        send_booking_confirmation_sms(
+            phone=participant_phone,
+            booking_details={
+                "event_name": event.name,
+                "date": str(event.event_date),
+                "time": str(event.event_time),
+                "ref": booking_ref,
+            },
+            mock=True  # 👈 if true SMS will only log to console, not send for real
+        )
+
         return booking
 
     except Exception as e:
@@ -70,9 +82,9 @@ def create_booking(db: Session, participant_id: str, event_id: str) -> Booking:
         raise e
 
 
-def cancel_booking(db: Session, booking_id: str) -> Booking:
+def cancel_booking(db: Session, booking_id: str, participant_phone: str) -> Booking:
     """
-    Cancel a booking atomically and release the slot.
+    Cancel a booking atomically and send mock cancellation SMS.
     """
     try:
         booking = db.query(Booking).filter(Booking.id == booking_id).first()
@@ -86,39 +98,23 @@ def cancel_booking(db: Session, booking_id: str) -> Booking:
         if not event:
             raise HTTPException(status_code=404, detail="Event not found")
 
-        # Update booking and release slot
+        # Update booking + release slot
         booking.booking_status = "cancelled"
         booking.cancelled_at = func.now()
         event.available_slots += 1
 
         db.commit()
         db.refresh(booking)
+
+        # Send cancellation SMS (mock mode)
+        send_booking_cancellation_sms(
+            phone=participant_phone,
+            booking_ref=booking.booking_reference,
+            mock=True  # 👈 if true its still mock mode
+        )
+
         return booking
 
     except Exception as e:
         db.rollback()
         raise e
-
-
-def get_user_bookings(db: Session, participant_id: str):
-    """
-    Get all bookings for a participant, ordered by status and date.
-    """
-    bookings = (
-        db.query(Booking)
-        .filter(Booking.participant_id == participant_id)
-        .order_by(
-            Booking.booking_status.desc(),  # confirmed first
-            Booking.booked_at.desc()
-        )
-        .all()
-    )
-
-    active_bookings = [b for b in bookings if b.booking_status == "confirmed"]
-    cancelled_bookings = [b for b in bookings if b.booking_status == "cancelled"]
-
-    return {
-        "message": f"{len(active_bookings)} active booking(s) found." if active_bookings else "No active bookings found.",
-        "active_bookings": active_bookings,
-        "cancelled_bookings": cancelled_bookings
-    }

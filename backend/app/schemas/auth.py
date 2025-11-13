@@ -158,14 +158,17 @@ class AdminRegisterRequest(BaseModel):
             raise ValueError('Password must contain at least one lowercase letter')
         if not any(c.isdigit() for c in v):
             raise ValueError('Password must contain at least one digit')
+        if not any(c in "!@#$%^&*()-_=+[]{};:,.<>?/|`~" for c in v):
+            raise ValueError('Password must contain at least one special character')
         return v
+
 
     class Config:
         json_schema_extra = {
             "example": {
                 "name": "Admin Name",
                 "email": "admin@rose.org",
-                "password": "SecurePass123"
+                "password": "SecurePass123!"
             }
         }
 
