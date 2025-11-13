@@ -50,7 +50,7 @@ export default function ParticipantRegisterPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       // Redirect to dashboard
-      router.push('/participant/dashboard');
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to register');
     } finally {
