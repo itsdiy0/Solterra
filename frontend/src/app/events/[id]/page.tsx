@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin, Clock, CreditCard, Smartphone } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface Event {
   id: string;
@@ -28,13 +29,14 @@ interface Booking {
 
 export default function EventDetailPage() {
   const params = useParams();
-  const eventId = params.id as string; // TS-safe
+  const eventId = params.id as string;
 
   const [event, setEvent] = useState<Event | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -55,17 +57,26 @@ export default function EventDetailPage() {
         const token = localStorage.getItem('access_token');
         if (!token) return;
 
-        const res = await fetch('http://127.0.0.1:8000/participant/bookings', {
+        const resBookings = await fetch('http://127.0.0.1:8000/participant/bookings', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) return;
+        if (!resBookings.ok) return;
 
-        const data: Booking[] = await res.json();
+        const data: Booking[] = await resBookings.json();
         const bookedIds = new Set(data.map((b) => b.event.id));
         if (bookedIds.has(eventId)) setIsBooked(true);
+
+        // Fetch user info for QR code
+        const resUser = await fetch('http://127.0.0.1:8000/participant/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resUser.ok) {
+          const userData = await resUser.json();
+          setUserId(userData.id);
+        }
       } catch (err) {
-        console.error('Error fetching participant bookings:', err);
+        console.error('Error fetching bookings/user info:', err);
       }
     };
 
@@ -105,18 +116,32 @@ export default function EventDetailPage() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.detail?.[0]?.msg || 'Booking failed');
-        return;
+      // Check if booking object exists
+      if (data.booking) {
+        alert(data.message || 'Booking confirmed!');
+
+        setIsBooked(true);
+        setEvent((prev) =>
+          prev ? { ...prev, available_slots: Math.max(prev.available_slots - 1, 0) } : prev
+        );
+
+        // Fetch user ID again for QR code
+        const resUser = await fetch('http://127.0.0.1:8000/participant/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resUser.ok) {
+          const userData = await resUser.json();
+          setUserId(userData.id);
+        }
+
+        // If message mentions SMS failure, show warning
+        if (data.message && data.message.toLowerCase().includes('sms')) {
+          alert('Booking confirmed, but SMS delivery failed. Please check your booking details.');
+        }
+      } else {
+        // Booking object missing => real failure
+        alert(data.detail?.[0]?.msg || 'Booking failed.');
       }
-
-      alert(data.message || 'Booking confirmed!');
-
-      // Update UI immediately
-      setIsBooked(true);
-      setEvent((prev) =>
-        prev ? { ...prev, available_slots: Math.max(prev.available_slots - 1, 0) } : prev
-      );
     } catch (err) {
       console.error(err);
       alert('Booking failed, please try again.');
@@ -127,12 +152,8 @@ export default function EventDetailPage() {
 
   const handleWhatsAppShare = () => {
     if (!event) return;
-
     const text = `Check out this event: ${event.name}\nDate: ${event.event_date} ${event.event_time}\nLocation: ${event.address}\nMore info: ${event.additional_info || ''}`;
-    const encodedText = encodeURIComponent(text);
-    const whatsappUrl = `https://wa.me/?text=${encodedText}`;
-
-    window.open(whatsappUrl, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -213,6 +234,19 @@ export default function EventDetailPage() {
               Share via WhatsApp
             </Button>
           </div>
+
+          {/* QR Code Section - only if booked */}
+          {isBooked && userId && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
+              <h3 className="font-semibold mb-2">Your Booking QR Code</h3>
+              <QRCodeCanvas
+                value={JSON.stringify({ booking_id: event.id, user_id: userId })}
+                size={180}
+              />
+              <p className="text-xs text-gray-500 mt-2">Show this QR code at the event for check-in.</p>
+            </div>
+          )}
+
         </CardContent>
       </Card>
     </DashboardLayout>
