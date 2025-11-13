@@ -39,9 +39,8 @@ export default function EventsPage() {
 
   return (
     <DashboardLayout title="Events">
-      {/* Search and Filters */}
       <div className="flex gap-4 mb-6 items-end">
-        {/* Location Search */}
+
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -55,7 +54,6 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* Date Picker */}
         <div className="flex-1">
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -68,19 +66,17 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* Search Button */}
+
         <Button className="h-12 px-8 bg-emerald-500 hover:bg-emerald-600">
           <Search className="w-5 h-5" />
         </Button>
       </div>
 
-      {/* Event Cards */}
       <div className="space-y-4">
         {events.map((event) => (
           <Card key={event.id} className="border-gray-200 hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                {/* Event Info */}
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold mb-2">{event.name}</h3>
                   
@@ -90,7 +86,6 @@ export default function EventsPage() {
                     <span>{event.time}</span>
                   </div>
 
-                  {/* Capacity Bar */}
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-600 min-w-[80px]">Capacity:</span>
                     <div className="flex-1 max-w-xs">
