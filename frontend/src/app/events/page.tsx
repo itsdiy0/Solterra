@@ -141,7 +141,6 @@ export default function EventsPage() {
 
   return (
     <DashboardLayout title="Events">
-      {/* Search and Filters */}
       <div className="flex gap-4 mb-6 items-end">
         <div className="flex-1">
           <div className="relative">

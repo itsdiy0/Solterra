@@ -10,9 +10,6 @@ from app.schemas.booking import BookingListResponse
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-# ----------------------------
-# Admin Profile
-# ----------------------------
 @router.get("/profile", response_model=AdminResponse)
 def get_admin_profile(current_user: Admin = Depends(get_current_admin)):
     """
@@ -20,9 +17,6 @@ def get_admin_profile(current_user: Admin = Depends(get_current_admin)):
     """
     return current_user
 
-# ----------------------------
-# Admin: Get all bookings for their events
-# ----------------------------
 @router.get("/bookings", response_model=BookingListResponse)
 def get_admin_event_bookings(
     db: Session = Depends(get_db),

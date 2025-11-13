@@ -9,7 +9,6 @@ from app.utils.security import get_current_participant
 from app.schemas.booking import (
     CreateBookingRequest,
     BookingWithEventResponse,
-    BookingListResponse,
     CancelBookingResponse,
     BookingResponse
 )
@@ -18,17 +17,12 @@ from app.services.booking_service import create_booking, cancel_booking
 
 router = APIRouter(prefix="/participant", tags=["Participant"])
 
-# ----------------------------
-# Participant Profile
-# ----------------------------
+
 @router.get("/profile", response_model=ParticipantResponse)
 def get_profile(current_user: Participant = Depends(get_current_participant)):
     return current_user
 
 
-# ----------------------------
-# Get participant bookings
-# ----------------------------
 @router.get("/bookings", response_model=List[BookingResponse])
 def get_my_bookings(
     db: Session = Depends(get_db),
