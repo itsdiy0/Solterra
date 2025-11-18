@@ -10,14 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function ParticipantLoginPage() {
   const router = useRouter();
+  const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
   const [formData, setFormData] = useState({
     phone: '',
     mykad: '',
+    otp: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -27,9 +29,7 @@ export default function ParticipantLoginPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/participant/auth/login`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             phone_number: formData.phone,
             mykad_id: formData.mykad,
@@ -37,22 +37,70 @@ export default function ParticipantLoginPage() {
         }
       );
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail?.[0]?.msg || 'Login failed');
+        if (data.detail && typeof data.detail === 'string') {
+          throw new Error(data.detail);
+        }
+        throw new Error('Failed to send OTP');
       }
 
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/participant/auth/verify-login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone_number: formData.phone,
+            otp_code: formData.otp,
+            purpose: 'login',
+          }),
+        }
+      );
+
       const data = await response.json();
+
+      if (!response.ok) {
+        if (data.detail) {
+          if (Array.isArray(data.detail)) {
+            throw new Error(data.detail.map((err: any) => err.msg || err).join(', '));
+          } else if (typeof data.detail === 'string') {
+            throw new Error(data.detail);
+          }
+        }
+        throw new Error('Invalid OTP');
+      }
 
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      setError(err.message || 'Invalid OTP');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendOTP = () => {
+    setFormData({ ...formData, otp: '' });
+    setError('');
+    handleSendOTP(new Event('submit') as any);
   };
 
   return (
@@ -71,64 +119,129 @@ export default function ParticipantLoginPage() {
             </div>
             <div>
               <CardTitle className="text-2xl font-bold">Welcome!</CardTitle>
-              <CardDescription>Login to book your screening events</CardDescription>
+              <CardDescription>
+                {step === 'credentials' 
+                  ? 'Login to book your screening events' 
+                  : 'Enter the code sent to your phone'}
+              </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+60123456789"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  required
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="mykad">MyKad ID</Label>
-                <Input
-                  id="mykad"
-                  type="text"
-                  placeholder="YYMMDD-PB-####"
-                  value={formData.mykad}
-                  onChange={(e) => setFormData({ ...formData, mykad: e.target.value })}
-                  required
-                  className="h-12"
-                />
-                <p className="text-xs text-gray-500">Format: 850101-01-1234</p>
-              </div>
-
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-sm text-red-600">{error}</p>
+            {step === 'credentials' ? (
+              <form onSubmit={handleSendOTP} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+60123456789 or 01XXXXXXXX"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    required
+                    className="h-12"
+                  />
                 </div>
-              )}
 
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-medium"
-              >
-                {loading ? 'Logging in...' : 'Login'}
-              </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="mykad">MyKad ID</Label>
+                  <Input
+                    id="mykad"
+                    type="text"
+                    placeholder="YYMMDD-PB-####"
+                    value={formData.mykad}
+                    onChange={(e) => setFormData({ ...formData, mykad: e.target.value })}
+                    required
+                    className="h-12"
+                  />
+                  <p className="text-xs text-gray-500">Format: 850101-01-1234</p>
+                </div>
 
-              <div className="text-center text-sm text-gray-600">
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => router.push('/auth/register')}
-                  className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-medium"
                 >
-                  Register now
-                </button>
-              </div>
-            </form>
+                  {loading ? 'Sending code...' : 'Send Verification Code'}
+                </Button>
+
+                <div className="text-center text-sm text-gray-600">
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => router.push('/auth/register')}
+                    className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
+                  >
+                    Register now
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOTP} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp">Verification Code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="000000"
+                    value={formData.otp}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      setFormData({ ...formData, otp: value });
+                    }}
+                    maxLength={6}
+                    required
+                    autoFocus
+                    className="h-12 text-center text-2xl tracking-widest font-mono"
+                  />
+                  <p className="text-xs text-gray-500 text-center">
+                    Code sent to {formData.phone}
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading || formData.otp.length !== 6}
+                  className="w-full h-12 bg-emerald-500 hover:bg-emerald-600 text-white font-medium"
+                >
+                  {loading ? 'Verifying...' : 'Verify & Login'}
+                </Button>
+
+                <div className="flex justify-between text-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('credentials');
+                      setFormData({ ...formData, otp: '' });
+                      setError('');
+                    }}
+                    className="text-emerald-600 hover:text-emerald-700 hover:underline"
+                  >
+                    ← Change details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    className="text-gray-600 hover:text-gray-800 hover:underline"
+                    disabled={loading}
+                  >
+                    Resend code
+                  </button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
 
