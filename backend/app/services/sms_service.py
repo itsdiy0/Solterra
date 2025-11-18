@@ -58,13 +58,13 @@ class TwilioSMSService:
 # ============================
 
 def send_otp_sms(phone: str, otp_code: str, mock: bool = True):
-    """
-    Send OTP to user via SMS.
-    """
+    print(f"\n📱 send_otp_sms() called with phone={phone}, otp={otp_code}, mock={mock}")
     sms_service = TwilioSMSService(mock=mock)
     message = f"Your verification code is: {otp_code}. It will expire in 10 minutes."
-    return sms_service.send_sms(phone, message)
-
+    print(f"📱 Calling sms_service.send_sms()...")
+    result = sms_service.send_sms(phone, message)
+    print(f"📱 SMS result: {result}\n")
+    return result
 
 def send_booking_confirmation_sms(phone: str, booking_details: dict, mock: bool = True):
     """

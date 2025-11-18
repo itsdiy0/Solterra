@@ -26,3 +26,42 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: dict
+
+class VerifyOTPRequest(BaseModel):
+    """Request to verify OTP"""
+    phone_number: str
+    otp_code: str
+    purpose: str  # 'registration', 'login', 'result_access'
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "phone_number": "+60123456789",
+                "otp_code": "123456",
+                "purpose": "login"
+            }
+        }
+
+
+class OTPResponse(BaseModel):
+    """Response after OTP sent"""
+    message: str
+    phone_number: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "OTP sent to +60123456789. Valid for 10 minutes.",
+                "phone_number": "+60123456789"
+            }
+        }
+
+class VerifyRegistrationRequest(BaseModel):
+    """Combined request for OTP verification and registration"""
+    # OTP data
+    phone_number: str
+    otp_code: str
+    purpose: str = "registration"
+    # Registration data
+    name: str
+    mykad_id: str

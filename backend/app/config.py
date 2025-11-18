@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str
     TWILIO_AUTH_TOKEN: str
     TWILIO_PHONE_NUMBER: str
-    
+    SMS_MODE:  str
     # Google Maps
     GOOGLE_MAPS_API_KEY: Optional[str] = None
     
@@ -28,9 +28,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     class Config:
-        #env_file = ".env"
-        #switch to local for development
-        env_file = ".env.local"
+        env_file = ".env"
 
 
 settings = Settings()
