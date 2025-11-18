@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,15 +20,10 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
-
   useEffect(() => {
-    if (!token) {
-      window.location.href = '/auth/login';
-      return;
-    }
-
     const fetchProfile = async () => {
+      const token = localStorage.getItem('access_token');
+      
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/profile`, {
           headers: {
@@ -47,57 +43,65 @@ export default function ProfilePage() {
     };
 
     fetchProfile();
-  }, [token]);
+  }, []);
 
   if (loading) {
     return (
-      <DashboardLayout title="Profile">
-        <p className="text-gray-500 text-center py-12">Loading profile...</p>
-      </DashboardLayout>
+      <ProtectedRoute requiredRole="participant">
+        <DashboardLayout title="Profile">
+          <p className="text-gray-500 text-center py-12">Loading profile...</p>
+        </DashboardLayout>
+      </ProtectedRoute>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout title="Profile">
-        <p className="text-red-600 text-center py-12">{error}</p>
-      </DashboardLayout>
+      <ProtectedRoute requiredRole="participant">
+        <DashboardLayout title="Profile">
+          <p className="text-red-600 text-center py-12">{error}</p>
+        </DashboardLayout>
+      </ProtectedRoute>
     );
   }
 
   if (!profile) {
     return (
-      <DashboardLayout title="Profile">
-        <p className="text-gray-500 text-center py-12">Profile not found.</p>
-      </DashboardLayout>
+      <ProtectedRoute requiredRole="participant">
+        <DashboardLayout title="Profile">
+          <p className="text-gray-500 text-center py-12">Profile not found.</p>
+        </DashboardLayout>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <DashboardLayout title="Profile">
-      <Card className="max-w-3xl mx-auto">
-        <CardContent className="p-6 space-y-4">
-          <h2 className="text-2xl font-bold mb-4">{profile.name}</h2>
+    <ProtectedRoute requiredRole="participant">
+      <DashboardLayout title="Profile">
+        <Card className="max-w-3xl mx-auto">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-2xl font-bold mb-4">{profile.name}</h2>
 
-          <div className="space-y-2 text-gray-700">
-            <p><span className="font-medium">Phone Number:</span> {profile.phone_number}</p>
-            <p><span className="font-medium">MyKad ID:</span> {profile.mykad_id}</p>
-            <p>
-              <span className="font-medium">Phone Verified:</span> {profile.phone_verified ? 'Yes' : 'No'}
-            </p>
-            <p>
-              <span className="font-medium">Member Since:</span> {new Date(profile.created_at).toLocaleDateString()}
-            </p>
-          </div>
+            <div className="space-y-2 text-gray-700">
+              <p><span className="font-medium">Phone Number:</span> {profile.phone_number}</p>
+              <p><span className="font-medium">MyKad ID:</span> {profile.mykad_id}</p>
+              <p>
+                <span className="font-medium">Phone Verified:</span> {profile.phone_verified ? 'Yes' : 'No'}
+              </p>
+              <p>
+                <span className="font-medium">Member Since:</span> {new Date(profile.created_at).toLocaleDateString()}
+              </p>
+            </div>
 
-          <Button
-            className="mt-4 bg-emerald-500 hover:bg-emerald-600"
-            onClick={() => window.location.href = '/events'}
-          >
-            Browse Events
-          </Button>
-        </CardContent>
-      </Card>
-    </DashboardLayout>
+            <Button
+              className="mt-4 bg-emerald-500 hover:bg-emerald-600"
+              onClick={() => window.location.href = '/events'}
+            >
+              Browse Events
+            </Button>
+          </CardContent>
+        </Card>
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }

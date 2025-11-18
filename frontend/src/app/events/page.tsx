@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,13 +37,12 @@ export default function EventsPage() {
   const [selectedDate, setSelectedDate] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Fetch published events
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/events/?published_only=true');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/?published_only=true`);
       const data = await res.json();
-      setEvents(data);
+      setEvents(data.events || data);
     } catch (err) {
       console.error('Error fetching events:', err);
     } finally {
@@ -50,13 +50,12 @@ export default function EventsPage() {
     }
   };
 
-  // Fetch participant bookings to mark already booked events
   const fetchParticipantBookings = async () => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
-      const res = await fetch('http://127.0.0.1:8000/participant/bookings', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -77,7 +76,7 @@ export default function EventsPage() {
     setBookingLoadingIds((prev) => new Set(prev).add(eventId));
 
     try {
-      const res = await fetch('http://127.0.0.1:8000/participant/bookings', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,10 +93,8 @@ export default function EventsPage() {
       const result = await res.json();
       alert(result.message || 'Booking successful!');
 
-      // Mark event as booked
       setBookedEventIds((prev) => new Set(prev).add(eventId));
 
-      // Update available_slots for the booked event
       setEvents((prevEvents) =>
         prevEvents.map((event) =>
           event.id === eventId
@@ -140,118 +137,119 @@ export default function EventsPage() {
   });
 
   return (
-    <DashboardLayout title="Events">
-      <div className="flex gap-4 mb-6 items-end">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Enter a location/Postcode"
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="pl-10 h-12"
-            />
+    <ProtectedRoute requiredRole="participant">
+      <DashboardLayout title="Events">
+        <div className="flex gap-4 mb-6 items-end">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Enter a location/Postcode"
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                className="pl-10 h-12"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="pl-10 h-12"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex-1">
-          <div className="relative">
-            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="pl-10 h-12"
-            />
-          </div>
-        </div>
-      </div>
+        {loading ? (
+          <p className="text-gray-500">Loading events...</p>
+        ) : filteredEvents.length === 0 ? (
+          <p className="text-gray-500">No events found</p>
+        ) : (
+          <div className="space-y-4">
+            {filteredEvents.map((event) => {
+              const isBooked = bookedEventIds.has(event.id);
+              const isBookingLoading = bookingLoadingIds.has(event.id);
 
-      {/* Event Cards */}
-      {loading ? (
-        <p className="text-gray-500">Loading events...</p>
-      ) : filteredEvents.length === 0 ? (
-        <p className="text-gray-500">No events found</p>
-      ) : (
-        <div className="space-y-4">
-          {filteredEvents.map((event) => {
-            const isBooked = bookedEventIds.has(event.id);
-            const isBookingLoading = bookingLoadingIds.has(event.id);
+              return (
+                <Card key={event.id} className="border-gray-200 hover:shadow-md transition-shadow">
+                  <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between">
+                    <div className="flex-1 mb-4 md:mb-0">
+                      <h3 className="text-lg font-semibold mb-2">{event.name}</h3>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {event.event_date} • {event.event_time}
+                      </p>
+                      <p className="text-sm text-gray-600 mb-2">{event.address}</p>
 
-            return (
-              <Card key={event.id} className="border-gray-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between">
-                  <div className="flex-1 mb-4 md:mb-0">
-                    <h3 className="text-lg font-semibold mb-2">{event.name}</h3>
-                    <p className="text-sm text-gray-600 mb-1">
-                      {event.event_date} • {event.event_time}
-                    </p>
-                    <p className="text-sm text-gray-600 mb-2">{event.address}</p>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600 min-w-[80px]">Capacity:</span>
-                      <div className="flex-1 max-w-xs">
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all ${
-                              event.available_slots === 0 ? 'bg-rose-500' : 'bg-emerald-500'
-                            }`}
-                            style={{
-                              width: `${capacityPercentage(
-                                event.total_slots - event.available_slots,
-                                event.total_slots
-                              )}%`,
-                            }}
-                          />
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-600 min-w-[80px]">Capacity:</span>
+                        <div className="flex-1 max-w-xs">
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full transition-all ${
+                                event.available_slots === 0 ? 'bg-rose-500' : 'bg-emerald-500'
+                              }`}
+                              style={{
+                                width: `${capacityPercentage(
+                                  event.total_slots - event.available_slots,
+                                  event.total_slots
+                                )}%`,
+                              }}
+                            />
+                          </div>
                         </div>
+                        <span className="text-sm font-medium min-w-[60px]">
+                          {event.total_slots - event.available_slots}/{event.total_slots}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium min-w-[60px]">
-                        {event.total_slots - event.available_slots}/{event.total_slots}
-                      </span>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col gap-2 md:ml-6">
-                    <Button
-                      variant="outline"
-                      onClick={() => router.push(`/events/${event.id}`)}
-                      className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                    >
-                      Details
-                    </Button>
-
-                    {isBooked ? (
-                      <Button disabled className="bg-gray-400 text-white">
-                        Booked
-                      </Button>
-                    ) : event.available_slots === 0 ? (
-                      <Button disabled className="bg-gray-300 text-white">Full</Button>
-                    ) : (
+                    <div className="flex flex-col gap-2 md:ml-6">
                       <Button
-                        onClick={() => handleBookEvent(event.id)}
-                        disabled={isBookingLoading}
-                        className={`bg-emerald-500 hover:bg-emerald-600 ${
-                          isBookingLoading ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+                        variant="outline"
+                        onClick={() => router.push(`/events/${event.id}`)}
+                        className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                       >
-                        {isBookingLoading ? 'Booking...' : 'Book'}
+                        Details
                       </Button>
-                    )}
 
-                    <Button
-                      onClick={() => handleWhatsAppShare(event)}
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                    >
-                      Share via WhatsApp
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </DashboardLayout>
+                      {isBooked ? (
+                        <Button disabled className="bg-gray-400 text-white">
+                          Booked
+                        </Button>
+                      ) : event.available_slots === 0 ? (
+                        <Button disabled className="bg-gray-300 text-white">Full</Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleBookEvent(event.id)}
+                          disabled={isBookingLoading}
+                          className={`bg-emerald-500 hover:bg-emerald-600 ${
+                            isBookingLoading ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {isBookingLoading ? 'Booking...' : 'Book'}
+                        </Button>
+                      )}
+
+                      <Button
+                        onClick={() => handleWhatsAppShare(event)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                      >
+                        Share via WhatsApp
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }
