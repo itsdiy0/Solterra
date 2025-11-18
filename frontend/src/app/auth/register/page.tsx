@@ -40,7 +40,14 @@ export default function ParticipantRegisterPage() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.detail?.[0]?.msg || 'Registration failed');
+        if (errData.detail) {
+          if (Array.isArray(errData.detail)) {
+            throw new Error(errData.detail.map((err: any) => err.msg).join(', '));
+          } else if (typeof errData.detail === 'string') {
+            throw new Error(errData.detail);
+          }
+        }
+        throw new Error('Registration failed');
       }
 
       const data = await response.json();
@@ -52,7 +59,7 @@ export default function ParticipantRegisterPage() {
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Failed to register');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
