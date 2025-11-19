@@ -2,17 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Shield, FileText, LifeBuoy, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface UserData {
   id: string;
   name: string;
-  phone_number: string;
-  mykad_id: string;
-  phone_verified: boolean;
+  phone_number?: string;
+  mykad_id?: string;
+  phone_verified?: boolean;
   created_at: string;
   email?: string;
 }
@@ -20,50 +20,62 @@ interface UserData {
 export default function SettingsPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem('access_token');
-      
+    const token = localStorage.getItem('access_token');
+    if (token) {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) throw new Error('Failed to fetch user profile');
-
-        const data: UserData = await res.json();
-        setUser(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+        fetchUser(token, payload.role);
+      } catch (e) {
+        console.error('Failed to decode token:', e);
         setLoading(false);
+        router.push('/auth/login');
       }
-    };
+    } else {
+      router.push('/auth/login');
+    }
+  }, [router]);
 
-    fetchUser();
-  }, []);
+  const fetchUser = async (token: string, role: string) => {
+    const endpoint = role === 'admin' ? '/admin/profile' : '/participant/profile';
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch user profile');
+
+      const data: UserData = await res.json();
+      setUser(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
-    window.location.href = '/auth/login';
+    const logoutRedirect = userRole === 'admin' ? '/admin/login' : '/auth/login';
+    window.location.href = logoutRedirect;
   };
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="Settings">
           <p className="text-gray-500 text-center py-12">Loading user data...</p>
         </DashboardLayout>
-      </ProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute requiredRole="participant">
       <DashboardLayout title="Settings">
         <div className="space-y-6 max-w-3xl mx-auto">
 
@@ -72,11 +84,15 @@ export default function SettingsPage() {
               <h2 className="text-xl font-semibold mb-2">Account</h2>
               <p className="text-gray-700">Name: {user?.name || 'Not provided'}</p>
               <p className="text-gray-700">Email: {user?.email || 'Not provided'}</p>
-              <p className="text-gray-700">Phone: {user?.phone_number || 'Not provided'}</p>
-              <p className="text-gray-700">MyKad ID: {user?.mykad_id || 'Not provided'}</p>
-              <p className="text-gray-700">
-                Phone Verified: {user?.phone_verified ? 'Yes' : 'No'}
-              </p>
+              {userRole === 'participant' && (
+                <>
+                  <p className="text-gray-700">Phone: {user?.phone_number || 'Not provided'}</p>
+                  <p className="text-gray-700">MyKad ID: {user?.mykad_id || 'Not provided'}</p>
+                  <p className="text-gray-700">
+                    Phone Verified: {user?.phone_verified ? 'Yes' : 'No'}
+                  </p>
+                </>
+              )}
               <p className="text-gray-700">
                 Account Created: {new Date(user?.created_at || '').toLocaleDateString()}
               </p>
@@ -139,6 +155,5 @@ export default function SettingsPage() {
           </div>
         </div>
       </DashboardLayout>
-    </ProtectedRoute>
   );
 }
