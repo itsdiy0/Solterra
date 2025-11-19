@@ -276,6 +276,15 @@ export default function EventsPage() {
                       Details
                     </Button>
 
+                    {userRole === 'admin' && (
+                        <Button
+                            onClick={() => router.push(`/admin/events/${event.id}/edit`)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                            Edit
+                        </Button>
+                    )}
+
                     {userRole === 'participant' && (
                       <>
                         {isBooked ? (
