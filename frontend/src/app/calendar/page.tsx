@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Users } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface Event {
   id: string;
@@ -33,50 +33,34 @@ export default function MyCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [cancelingIds, setCancelingIds] = useState<Set<string>>(new Set());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
+    const fetchBookings = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserRole(payload.role);
-        if (payload.role === 'participant') {
-          fetchBookings(token);
-        } else {
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error('Failed to decode token:', e);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) throw new Error('Failed to fetch bookings');
+
+        const data: Booking[] = await res.json();
+        const now = new Date();
+        setBookings(
+          data.filter(
+            (b) => new Date(`${b.event.event_date}T${b.event.event_time}`) >= now
+          )
+        );
+      } catch (err: any) {
+        setError(err.message || 'Error fetching bookings');
+      } finally {
         setLoading(false);
-        router.push('/auth/login');
       }
-    } else {
-      router.push('/auth/login');
-    }
-  }, [router]);
+    };
 
-  const fetchBookings = async (token: string) => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      });
-      if (!res.ok) throw new Error('Failed to fetch bookings');
-
-      const data: Booking[] = await res.json();
-      const now = new Date();
-      setBookings(
-        data.filter(
-          (b) => new Date(`${b.event.event_date}T${b.event.event_time}`) >= now
-        )
-      );
-    } catch (err: any) {
-      setError(err.message || 'Error fetching bookings');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchBookings();
+  }, []);
 
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -111,27 +95,21 @@ export default function MyCalendarPage() {
 
   if (loading) {
     return (
+      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="My Calendar">
           <p className="text-gray-500 text-center py-12">Loading...</p>
         </DashboardLayout>
-    );
-  }
-
-  if (userRole === 'admin') {
-    return (
-      <DashboardLayout title="My Calendar">
-        <div className="text-center py-12">
-          <p className="text-gray-500">This page is for participants only.</p>
-        </div>
-      </DashboardLayout>
+      </ProtectedRoute>
     );
   }
 
   if (error) {
     return (
+      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="My Calendar">
           <p className="text-red-600 text-center py-12">{error}</p>
         </DashboardLayout>
+      </ProtectedRoute>
     );
   }
 
@@ -152,6 +130,7 @@ export default function MyCalendarPage() {
   const today = new Date();
 
   return (
+    <ProtectedRoute requiredRole="participant">
       <DashboardLayout title="My Calendar">
         <h2 className="text-xl font-semibold mb-4">Bookings Calendar</h2>
 
@@ -349,5 +328,6 @@ export default function MyCalendarPage() {
             })}
         </div>
       </DashboardLayout>
+    </ProtectedRoute>
   );
 }
