@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: 'participant' | 'admin';
+  redirectPath?: string;
 }
 
 export default function ProtectedRoute({ 
   children, 
-  requiredRole 
+  requiredRole,
+  redirectPath = '/auth/login' // Default redirect path
 }: ProtectedRouteProps) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -22,7 +24,7 @@ export default function ProtectedRoute({
       
       if (!token) {
         // No token - redirect to login
-        router.push('/auth/login');
+        router.push(redirectPath);
         return;
       }
 
@@ -35,13 +37,13 @@ export default function ProtectedRoute({
         const exp = payload.exp * 1000; // Convert to milliseconds
         if (Date.now() > exp) {
           localStorage.removeItem('access_token');
-          router.push('/auth/login');
+          router.push(redirectPath);
           return;
         }
 
         // Check role if required
         if (requiredRole && role !== requiredRole) {
-          router.push('/auth/login');
+          router.push(redirectPath);
           return;
         }
 
@@ -49,14 +51,14 @@ export default function ProtectedRoute({
       } catch (error) {
         console.error('Auth check failed:', error);
         localStorage.removeItem('access_token');
-        router.push('/auth/login');
+        router.push(redirectPath);
       } finally {
         setLoading(false);
       }
     };
 
     checkAuth();
-  }, [router, requiredRole]);
+  }, [router, requiredRole, redirectPath]);
 
   if (loading) {
     return (

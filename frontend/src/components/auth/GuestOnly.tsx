@@ -5,9 +5,13 @@ import { useRouter } from 'next/navigation';
 
 interface GuestOnlyProps {
   children: React.ReactNode;
+  redirectPath?: string;
 }
 
-export default function GuestOnly({ children }: GuestOnlyProps) {
+export default function GuestOnly({ 
+  children,
+  redirectPath = '/dashboard' // Default redirect for authenticated users
+}: GuestOnlyProps) {
   const router = useRouter();
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,7 +28,7 @@ export default function GuestOnly({ children }: GuestOnlyProps) {
           
           if (Date.now() < exp) {
             // Token valid - redirect to dashboard
-            router.push('/dashboard');
+            router.push(redirectPath);
             return;
           } else {
             // Token expired - clear it
@@ -42,7 +46,7 @@ export default function GuestOnly({ children }: GuestOnlyProps) {
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, redirectPath]);
 
   if (loading) {
     return (

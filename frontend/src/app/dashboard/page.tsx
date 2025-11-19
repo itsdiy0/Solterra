@@ -16,7 +16,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <ProtectedRoute requiredRole="participant">
+    <ProtectedRoute requiredRole="participant" redirectPath="/auth/login">
       <DashboardLayout title="Dashboard">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>

@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
       localStorage.setItem('access_token', data.access_token);
 
       alert('Login successful!');
-      router.push('/dashboard'); // redirect to your dashboard or main page
+      router.push('/admin/dashboard'); // redirect to your dashboard or main page
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
