@@ -70,7 +70,7 @@ const CreateEventPage = () => {
   };
 
   return (
-    <ProtectedRoute requiredRole="admin" redirectPath="/admin/login">
+    <ProtectedRoute requiredRole="admin">
       <DashboardLayout title="Create Event">
         <Card className="w-full max-w-2xl mx-auto">
           <CardHeader>

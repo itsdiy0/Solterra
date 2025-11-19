@@ -94,6 +94,7 @@ export default function ParticipantRegisterPage() {
         throw new Error('OTP verification failed');
       }
 
+      // Use single token key
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
