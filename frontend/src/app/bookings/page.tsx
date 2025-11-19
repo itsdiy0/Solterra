@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Event {
   id: string;
@@ -31,32 +31,49 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cancelingIds, setCancelingIds] = useState<Set<string>>(new Set());
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      const token = localStorage.getItem('access_token');
-      
+    const token = localStorage.getItem('access_token');
+    if (token) {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) throw new Error('Failed to fetch bookings');
-
-        const data: Booking[] = await res.json();
-        setBookings(data);
-      } catch (err: any) {
-        setError(err.message || 'Error fetching bookings');
-      } finally {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+        if (payload.role === 'participant') {
+          fetchBookings(token);
+        } else {
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error('Failed to decode token:', e);
         setLoading(false);
+        router.push('/auth/login');
       }
-    };
+    } else {
+      router.push('/auth/login');
+    }
+  }, [router]);
 
-    fetchBookings();
-  }, []);
+  const fetchBookings = async (token: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to fetch bookings');
+
+      const data: Booking[] = await res.json();
+      setBookings(data);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -103,26 +120,31 @@ export default function MyBookingsPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="My Bookings">
-          <p className="text-gray-500 text-center py-12">Loading bookings...</p>
+          <p className="text-gray-500 text-center py-12">Loading...</p>
         </DashboardLayout>
-      </ProtectedRoute>
+    );
+  }
+
+  if (userRole === 'admin') {
+    return (
+      <DashboardLayout title="My Bookings">
+        <div className="text-center py-12">
+          <p className="text-gray-500">This page is for participants only.</p>
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="My Bookings">
           <p className="text-red-600 text-center py-12">{error}</p>
         </DashboardLayout>
-      </ProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute requiredRole="participant">
       <DashboardLayout title="My Bookings">
         {bookings.length === 0 ? (
           <Card>
@@ -230,6 +252,5 @@ export default function MyBookingsPage() {
           </div>
         )}
       </DashboardLayout>
-    </ProtectedRoute>
   );
 }

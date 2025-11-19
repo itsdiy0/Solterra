@@ -10,47 +10,73 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ 
   children, 
-  requiredRole 
+  requiredRole
 }: ProtectedRouteProps) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       const token = localStorage.getItem('access_token');
       
       if (!token) {
-        // No token - redirect to login
-        router.push('/auth/login');
+        // No token - redirect to appropriate login page
+        if (requiredRole === 'admin') {
+          router.push('/admin/login');
+        } else {
+          router.push('/auth/login');
+        }
+        setLoading(false);
         return;
       }
 
       try {
-        // Decode JWT to check role (basic client-side check)
+        // Decode JWT to check role and expiry
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const role = payload.role;
+        const userRole = payload.role;
         
         // Check if token expired
-        const exp = payload.exp * 1000; // Convert to milliseconds
+        const exp = payload.exp * 1000;
         if (Date.now() > exp) {
           localStorage.removeItem('access_token');
-          router.push('/auth/login');
+          localStorage.removeItem('user');
+          
+          // Redirect to appropriate login
+          if (requiredRole === 'admin') {
+            router.push('/admin/login');
+          } else {
+            router.push('/auth/login');
+          }
+          setLoading(false);
           return;
         }
 
-        // Check role if required
-        if (requiredRole && role !== requiredRole) {
-          router.push('/auth/login');
+        // Check role matches requirement
+        if (requiredRole && userRole !== requiredRole) {
+          // User has wrong role - redirect them to their own dashboard
+          if (userRole === 'admin') {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/dashboard');
+          }
+          setLoading(false);
           return;
         }
 
+        // All checks passed
         setIsAuthorized(true);
+        setLoading(false);
       } catch (error) {
         console.error('Auth check failed:', error);
         localStorage.removeItem('access_token');
-        router.push('/auth/login');
-      } finally {
+        localStorage.removeItem('user');
+        
+        if (requiredRole === 'admin') {
+          router.push('/admin/login');
+        } else {
+          router.push('/auth/login');
+        }
         setLoading(false);
       }
     };
@@ -70,7 +96,7 @@ export default function ProtectedRoute({
   }
 
   if (!isAuthorized) {
-    return null; // Will redirect, so show nothing
+    return null;
   }
 
   return <>{children}</>;

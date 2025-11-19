@@ -37,7 +37,8 @@ export default function MyCalendarPage() {
   useEffect(() => {
     const fetchBookings = async () => {
       const token = localStorage.getItem('access_token');
-      
+      if (!token) return;
+
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -96,7 +97,7 @@ export default function MyCalendarPage() {
     return (
       <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="My Calendar">
-          <p className="text-gray-500 text-center py-12">Loading bookings...</p>
+          <p className="text-gray-500 text-center py-12">Loading...</p>
         </DashboardLayout>
       </ProtectedRoute>
     );

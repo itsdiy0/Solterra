@@ -1,14 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
-interface GuestOnlyProps {
-  children: React.ReactNode;
-}
-
-export default function GuestOnly({ children }: GuestOnlyProps) {
+export default function GuestOnly({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -16,33 +13,47 @@ export default function GuestOnly({ children }: GuestOnlyProps) {
     const checkAuth = () => {
       const token = localStorage.getItem('access_token');
       
-      if (token) {
-        try {
-          // Decode JWT to check if valid and not expired
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const exp = payload.exp * 1000;
-          
-          if (Date.now() < exp) {
-            // Token valid - redirect to dashboard
-            router.push('/dashboard');
-            return;
-          } else {
-            // Token expired - clear it
-            localStorage.removeItem('access_token');
-          }
-        } catch (error) {
-          // Invalid token - clear it
-          localStorage.removeItem('access_token');
-        }
+      if (!token) {
+        // No token - user is guest
+        setIsGuest(true);
+        setLoading(false);
+        return;
       }
-      
-      // No valid token - user is guest
-      setIsGuest(true);
-      setLoading(false);
+
+      try {
+        // Decode JWT to check role and expiry
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const role = payload.role;
+        const exp = payload.exp * 1000;
+        
+        // Check if token expired
+        if (Date.now() > exp) {
+          // Token expired - clear it and allow access to auth pages
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user');
+          setIsGuest(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Token is valid - redirect to appropriate dashboard
+        if (role === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (role === 'participant') {
+          router.push('/dashboard');
+        }
+        setLoading(false);
+      } catch (error) {
+        // Invalid token - clear it
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        setIsGuest(true);
+        setLoading(false);
+      }
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, pathname]);
 
   if (loading) {
     return (

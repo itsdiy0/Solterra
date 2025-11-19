@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +37,7 @@ export default function EventDetailPage() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [isBooked, setIsBooked] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -53,36 +53,44 @@ export default function EventDetailPage() {
       }
     };
 
-    const fetchParticipantBookings = async () => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
       try {
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
-
-        const resBookings = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!resBookings.ok) return;
-
-        const data: Booking[] = await resBookings.json();
-        const bookedIds = new Set(data.map((b) => b.event.id));
-        if (bookedIds.has(eventId)) setIsBooked(true);
-
-        const resUser = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (resUser.ok) {
-          const userData = await resUser.json();
-          setUserId(userData.id);
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(payload.role);
+        if (payload.role === 'participant') {
+          fetchParticipantBookings(token);
         }
-      } catch (err) {
-        console.error('Error fetching bookings/user info:', err);
+      } catch (e) {
+        console.error('Failed to decode token:', e);
       }
-    };
-
+    }
     fetchEvent();
-    fetchParticipantBookings();
   }, [eventId]);
+
+  const fetchParticipantBookings = async (token: string) => {
+    try {
+      const resBookings = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!resBookings.ok) return;
+
+      const data: Booking[] = await resBookings.json();
+      const bookedIds = new Set(data.map((b) => b.event.id));
+      if (bookedIds.has(eventId)) setIsBooked(true);
+
+      const resUser = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resUser.ok) {
+        const userData = await resUser.json();
+        setUserId(userData.id);
+      }
+    } catch (err) {
+      console.error('Error fetching bookings/user info:', err);
+    }
+  };
 
   const handleBooking = async () => {
     if (!acceptedTerms) {
@@ -148,21 +156,17 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="Event Details">
           <p className="p-6 text-center">Loading event...</p>
         </DashboardLayout>
-      </ProtectedRoute>
     );
   }
 
   if (!event) {
     return (
-      <ProtectedRoute requiredRole="participant">
         <DashboardLayout title="Event Details">
           <p className="p-6 text-center">Event not found.</p>
         </DashboardLayout>
-      </ProtectedRoute>
     );
   }
 
@@ -170,7 +174,6 @@ export default function EventDetailPage() {
   const slotsRemaining = event.available_slots;
 
   return (
-    <ProtectedRoute requiredRole="participant">
       <DashboardLayout title="Book Event">
         <Card className="max-w-3xl">
           <CardContent className="p-6 space-y-6">
@@ -207,47 +210,52 @@ export default function EventDetailPage() {
                 <div className="flex items-center gap-2">
                   <Smartphone className="w-5 h-5 text-gray-600" />
                   <span>Mobile phone (to receive results via SMS)</span>
+                .</div>
+              </div>
+            </div>
+
+            {userRole === 'participant' && (
+              <>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-3">Accept terms and conditions</h3>
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    />
+                    <label htmlFor="terms" className="text-sm text-gray-700">I agree to the terms and conditions</label>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-3">Accept terms and conditions</h3>
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  id="terms"
-                  checked={acceptedTerms}
-                  onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-                />
-                <label htmlFor="terms" className="text-sm text-gray-700">I agree to the terms and conditions</label>
-              </div>
-            </div>
+                <div className="flex gap-3">
+                  {isBooked ? (
+                    <Button disabled className="flex-1 h-12 bg-gray-400 text-white">
+                      Already Booked
+                    </Button>
+                  ) : event.available_slots === 0 ? (
+                    <Button disabled className="flex-1 h-12 bg-gray-300 text-white">
+                      Full
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleBooking}
+                      disabled={!acceptedTerms || bookingLoading}
+                      className="flex-1 h-12 bg-rose-400 hover:bg-rose-500 text-white"
+                    >
+                      {bookingLoading ? 'Booking...' : 'Book Now'}
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleWhatsAppShare}
+                    className="flex-1 h-12 bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
+                    Share via WhatsApp
+                  </Button>
+                </div>
+              </>
+            )}
 
-            <div className="flex gap-3">
-              {isBooked ? (
-                <Button disabled className="flex-1 h-12 bg-gray-400 text-white">
-                  Already Booked
-                </Button>
-              ) : event.available_slots === 0 ? (
-                <Button disabled className="flex-1 h-12 bg-gray-300 text-white">
-                  Full
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleBooking}
-                  disabled={!acceptedTerms || bookingLoading}
-                  className="flex-1 h-12 bg-rose-400 hover:bg-rose-500 text-white"
-                >
-                  {bookingLoading ? 'Booking...' : 'Book Now'}
-                </Button>
-              )}
-              <Button
-                onClick={handleWhatsAppShare}
-                className="flex-1 h-12 bg-emerald-500 hover:bg-emerald-600 text-white"
-              >
-                Share via WhatsApp
-              </Button>
-            </div>
 
             {isBooked && userId && (
               <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
@@ -262,6 +270,5 @@ export default function EventDetailPage() {
           </CardContent>
         </Card>
       </DashboardLayout>
-    </ProtectedRoute>
   );
 }
