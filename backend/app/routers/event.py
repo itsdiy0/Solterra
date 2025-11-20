@@ -49,6 +49,18 @@ def edit_event(
     return service.update_event(event_id, event_data, current_admin.id)
 
 
+# ---------------- DELETE EVENT ----------------
+@router.delete("/{event_id}", status_code=status.HTTP_200_OK)
+def delete_event(
+    event_id: str = Path(..., description="ID of the event to delete"),
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Delete an event (admin only)."""
+    service = EventService(db)
+    return service.delete_event(event_id, current_admin.id)
+
+
 # ---------------- GET EVENT PARTICIPANTS (ADMIN ONLY) ----------------
 @router.get("/{event_id}/participants")
 def get_event_participants(
