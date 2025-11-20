@@ -138,6 +138,38 @@ export default function EventsPage() {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setToast({ message: 'You must be logged in to delete events.', type: 'error', show: true });
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || 'Failed to delete event');
+      }
+
+      setToast({ message: 'Event deleted successfully!', type: 'success', show: true });
+      // Refresh events after deletion
+      fetchEvents();
+    } catch (err: any) {
+      setToast({ message: err.message || 'Error deleting event', type: 'error', show: true });
+    }
+  };
+
   // WhatsApp share
   const handleWhatsAppShare = (event: Event) => {
     const text = `Check out this event: ${event.name}\nDate: ${event.event_date} ${event.event_time}\nLocation: ${event.address}\n${event.additional_info || ''}`;
@@ -277,12 +309,20 @@ export default function EventsPage() {
                     </Button>
 
                     {userRole === 'admin' && (
+                      <>
                         <Button
                             onClick={() => router.push(`/admin/events/${event.id}/edit`)}
                             className="bg-blue-500 hover:bg-blue-600 text-white"
                         >
                             Edit
                         </Button>
+                        <Button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                            Delete
+                        </Button>
+                      </>
                     )}
 
                     {userRole === 'participant' && (
