@@ -1,13 +1,11 @@
-
 import logging
 from typing import Optional
 
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 
-from app.config import settings  # or wherever your settings are stored
+from app.config import settings
 
-# Initialize logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -36,6 +34,12 @@ class TwilioSMSService:
         Returns message SID if sent successfully.
         """
         if self.mock:
+            print("=" * 60)
+            print("[MOCK SMS]")
+            print(f"To: {to}")
+            print(f"Message:\n{message}")
+            print("=" * 60)
+            
             logger.info(f"[MOCK SMS] To: {to} | Message: {message}")
             return "mock-sid"
 
@@ -49,22 +53,17 @@ class TwilioSMSService:
             return msg.sid
 
         except TwilioRestException as e:
-            logger.error(f" Failed to send SMS to {to}: {e.msg}")
+            logger.error(f"Failed to send SMS to {to}: {e.msg}")
             return None
 
 
-# ============================
-# Specific message functions
-# ============================
-
 def send_otp_sms(phone: str, otp_code: str, mock: bool = True):
-    print(f"\n📱 send_otp_sms() called with phone={phone}, otp={otp_code}, mock={mock}")
+    """Send OTP verification code via SMS"""
     sms_service = TwilioSMSService(mock=mock)
     message = f"Your verification code is: {otp_code}. It will expire in 10 minutes."
-    print(f"📱 Calling sms_service.send_sms()...")
     result = sms_service.send_sms(phone, message)
-    print(f"📱 SMS result: {result}\n")
     return result
+
 
 def send_booking_confirmation_sms(phone: str, booking_details: dict, mock: bool = True):
     """
@@ -79,7 +78,7 @@ def send_booking_confirmation_sms(phone: str, booking_details: dict, mock: bool 
     """
     sms_service = TwilioSMSService(mock=mock)
     message = (
-        f" Booking confirmed for {booking_details['event_name']} "
+        f"Booking confirmed for {booking_details['event_name']} "
         f"on {booking_details['date']} at {booking_details['time']}.\n"
         f"Ref: {booking_details['ref']}."
     )
@@ -87,12 +86,51 @@ def send_booking_confirmation_sms(phone: str, booking_details: dict, mock: bool 
 
 
 def send_booking_cancellation_sms(phone: str, booking_ref: str, mock: bool = True):
-    """
-    Send booking cancellation SMS.
-    """
+    """Send booking cancellation SMS"""
     sms_service = TwilioSMSService(mock=mock)
     message = (
         f"Your booking with reference {booking_ref} has been cancelled. "
-        "If this wasn’t you, please contact support immediately."
+        "If this wasn't you, please contact support immediately."
     )
+    return sms_service.send_sms(phone, message)
+
+
+def send_result_notification_sms(
+    phone: str,
+    result_category: str,
+    booking_reference: str,
+    participant_name: str,
+    result_url: Optional[str] = None,
+    mock: bool = True
+) -> dict:
+    """
+    Send test result notification SMS.
+    Different templates for Normal vs Abnormal results.
+    """
+    sms_service = TwilioSMSService(mock=mock)
+    
+    if result_category == "Normal":
+        message = (
+            f"Dear {participant_name},\n\n"
+            f"Your screening test results are ready.\n\n"
+            f"Result: Normal\n"
+            f"Booking Ref: {booking_reference}\n\n"
+            f"No further action needed.\n"
+            f"View full results: {result_url or 'Login to view'}\n\n"
+            f"- ROSE Foundation\n"
+            f"Cervical Cancer Screening Program"
+        )
+    else:
+        message = (
+            f"Dear {participant_name},\n\n"
+            f"Your screening test results are ready.\n\n"
+            f"Result: Abnormal - Follow-up Required\n"
+            f"Booking Ref: {booking_reference}\n\n"
+            f"IMPORTANT: Please contact ROSE Foundation:\n"
+            f"Phone: +60-XXX-XXXX\n"
+            f"Email: support@rose.org\n\n"
+            f"View full results: {result_url or 'Login to view'}\n\n"
+            f"- ROSE Foundation"
+        )
+    
     return sms_service.send_sms(phone, message)
