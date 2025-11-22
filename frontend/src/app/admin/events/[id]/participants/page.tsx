@@ -227,7 +227,7 @@ export default function EventParticipantsPage() {
 
           {/* Event Info */}
           <Card className="mb-6">
-            <CardContent className="p-6">
+            <CardContent>
               <h2 className="text-2xl font-bold mb-3">{event.name}</h2>
               <div className="flex items-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
@@ -264,7 +264,7 @@ export default function EventParticipantsPage() {
 
                 return (
                   <Card key={participant.id} className={isCancelled ? 'opacity-50' : ''}>
-                    <CardContent className="p-5">
+                    <CardContent>
                       <div className="flex items-center gap-6">
                         
                         {/* Status Indicator */}
