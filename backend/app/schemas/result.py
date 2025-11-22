@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -22,15 +22,20 @@ class ResultUploadRequest(BaseModel):
 
 class ResultResponse(BaseModel):
     """Response schema for test result"""
-    id: str
-    booking_id: str
+    id: UUID
+    booking_id: UUID
     result_category: str
     result_notes: Optional[str]
     result_file_url: Optional[str]
-    uploaded_by: str
+    uploaded_by: UUID
     uploaded_at: datetime
     sms_sent: bool
     sms_sent_at: Optional[datetime]
+    
+    # ✅ Convert UUIDs to strings automatically
+    @field_serializer('id', 'booking_id', 'uploaded_by')
+    def serialize_uuid(self, value: UUID) -> str:
+        return str(value)
     
     class Config:
         from_attributes = True

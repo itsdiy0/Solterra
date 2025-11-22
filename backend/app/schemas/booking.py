@@ -109,3 +109,21 @@ class CancelBookingResponse(BaseModel):
                 "slots_released": 1
             }
         }
+
+class AdminBookingResponse(BaseModel):
+    """Response schema for admin booking view (includes participant info)"""
+    id: UUID
+    booking_reference: str
+    booking_status: str
+    booked_at: datetime
+    cancelled_at: Optional[datetime] = None
+    participant: dict  # Safe participant fields only
+    event: dict
+
+    class Config:
+        from_attributes = True
+
+class AdminBookingListResponse(BaseModel):
+    """Response schema for admin booking list"""
+    bookings: list[AdminBookingResponse]
+    total: int
