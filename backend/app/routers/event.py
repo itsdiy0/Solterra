@@ -108,3 +108,59 @@ def get_event_participants(
         },
         "participants": participants
     }
+
+
+# ---------------- EXPORT EVENT PARTICIPANTS (ADMIN ONLY) ----------------
+@router.get("/{event_id}/participants/export")
+def export_event_participants(
+    event_id: str,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Export event participants as CSV."""
+    from app.models.booking import Booking
+    from fastapi.responses import StreamingResponse
+    import csv
+    import io
+
+    # Get event
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Get bookings for this event
+    bookings = db.query(Booking).filter(Booking.event_id == event_id).all()
+
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        "Booking Reference", 
+        "Booking Status", 
+        "Booked At", 
+        "Name", 
+        "Phone Number", 
+        "MyKad ID"
+    ])
+
+    # Write data
+    for booking in bookings:
+        writer.writerow([
+            booking.booking_reference,
+            booking.booking_status,
+            booking.booked_at.strftime("%Y-%m-%d %H:%M:%S"),
+            booking.participant.name,
+            booking.participant.phone_number,
+            booking.participant.mykad_id,
+        ])
+    
+    output.seek(0)
+    
+    response = StreamingResponse(
+        iter([output.getvalue()]), 
+        media_type="text/csv"
+    )
+    response.headers["Content-Disposition"] = f"attachment; filename=participants_{event_id}.csv"
+    return response

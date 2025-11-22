@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Toast from '@/components/ui/toast';
-import { User, Phone, CreditCard, CheckCircle, XCircle, Calendar, ArrowLeft, Clock } from 'lucide-react';
+import { User, Phone, CreditCard, CheckCircle, XCircle, Calendar, ArrowLeft, Clock, Download } from 'lucide-react';
 
 interface Participant {
   id: string;
@@ -125,6 +125,42 @@ export default function EventParticipantsPage() {
     }
   };
 
+  const handleExportCSV = async () => {
+    const token = localStorage.getItem('access_token');
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}/participants/export`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed to export CSV');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `participants_${eventId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setToast({ 
+        message: 'Export started successfully', 
+        type: 'success', 
+        show: true 
+      });
+    } catch (err: any) {
+      console.error('Export error:', err);
+      setToast({ 
+        message: err.message || 'Failed to export CSV', 
+        type: 'error', 
+        show: true 
+      });
+    }
+  };
+
   if (loading) {
     return (
       <ProtectedRoute requiredRole="admin">
@@ -170,18 +206,28 @@ export default function EventParticipantsPage() {
 
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/admin/events/${eventId}`)}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Event
-          </Button>
+          <div className="flex justify-between items-center mb-6">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/admin/events/${eventId}`)}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Event
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportCSV}
+              disabled={participants.length === 0}
+              title={participants.length === 0 ? "No participants to export" : ""}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
 
           {/* Event Info */}
           <Card className="mb-6">
-            <CardContent className="p-6">
+            <CardContent>
               <h2 className="text-2xl font-bold mb-3">{event.name}</h2>
               <div className="flex items-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
@@ -218,7 +264,7 @@ export default function EventParticipantsPage() {
 
                 return (
                   <Card key={participant.id} className={isCancelled ? 'opacity-50' : ''}>
-                    <CardContent className="p-5">
+                    <CardContent>
                       <div className="flex items-center gap-6">
                         
                         {/* Status Indicator */}
