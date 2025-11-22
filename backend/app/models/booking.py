@@ -18,6 +18,7 @@ class Booking(Base):
     booking_status = Column(String(50), default="confirmed", index=True)
     booked_at = Column(DateTime, default=datetime.utcnow)
     cancelled_at = Column(DateTime, nullable=True)
+    test_result = relationship("TestResult", back_populates="booking", uselist=False)
 
     # Relationships
     participant = relationship("Participant", back_populates="bookings")

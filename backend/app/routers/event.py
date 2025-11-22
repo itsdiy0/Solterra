@@ -5,6 +5,8 @@ from app.utils.security import get_current_admin
 from app.models.admin import Admin
 from app.schemas.event import EventCreateRequest, EventResponse
 from app.services.event_service import EventService
+from app.models.event import Event  
+
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
@@ -49,30 +51,60 @@ def edit_event(
     return service.update_event(event_id, event_data, current_admin.id)
 
 
+# ---------------- DELETE EVENT ----------------
+@router.delete("/{event_id}", status_code=status.HTTP_200_OK)
+def delete_event(
+    event_id: str = Path(..., description="ID of the event to delete"),
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """Delete an event (admin only)."""
+    service = EventService(db)
+    return service.delete_event(event_id, current_admin.id)
+
+
 # ---------------- GET EVENT PARTICIPANTS (ADMIN ONLY) ----------------
 @router.get("/{event_id}/participants")
 def get_event_participants(
     event_id: str,
     db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_admin)  # ✅ admin-only
+    current_admin: Admin = Depends(get_current_admin)
 ):
-    """Get an event with participants (safe fields only)."""
-    service = EventService(db)
-    event_data = service.get_event_with_participants(event_id)
-
-    # Only return safe participant info
-    safe_participants = [
+    """Get an event with participants and their bookings."""
+    from app.models.booking import Booking
+    
+    # Get event
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    # Get bookings for this event
+    bookings = db.query(Booking).filter(Booking.event_id == event_id).all()
+    
+    # Format participant data with booking info
+    participants = [
         {
-            "id": p["id"],
-            "name": p["name"],
-            "booking_status": p["booking_status"],
-            "booked_at": p["booked_at"],
-            "booking_reference": getattr(p, "booking_reference", None)
+            "id": str(booking.id),  # ✅ This is the booking ID (what we need!)
+            "booking_id": str(booking.id),  # ✅ Explicit booking_id field
+            "booking_reference": booking.booking_reference,
+            "booking_status": booking.booking_status,
+            "booked_at": booking.booked_at.isoformat(),
+            "name": booking.participant.name,
+            "phone_number": booking.participant.phone_number,
+            "mykad_id": booking.participant.mykad_id,
         }
-        for p in event_data["participants"]
+        for booking in bookings
     ]
-
+    
     return {
-        "event": event_data["event"],
-        "participants": safe_participants
+        "event": {
+            "id": str(event.id),
+            "name": event.name,
+            "event_date": str(event.event_date),
+            "event_time": str(event.event_time),
+            "address": event.address,
+            "total_slots": event.total_slots,
+            "available_slots": event.available_slots,
+        },
+        "participants": participants
     }

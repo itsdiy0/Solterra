@@ -19,26 +19,27 @@ export default function Sidebar() {
         console.error('Failed to decode token:', e);
       }
     }
-  }, [pathname]); // Re-check on route change
+  }, [pathname]);
 
-  const baseNavItems = [
+  // Admin nav items with correct paths
+  const adminNavItems = [
+    { icon: Home, label: 'Home', path: '/admin/dashboard' },
+    { icon: ClipboardList, label: 'Events', path: '/admin/events' },
+    { icon: Package, label: 'Results', path: '/admin/results' }, 
+    { icon: BookOpen, label: 'Bookings', path: '/admin/bookings' },
+    { icon: Calendar, label: 'Calendar', path: '/admin/calendar' },
+  ];
+
+  // Participant nav items
+  const participantNavItems = [
+    { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: ClipboardList, label: 'Events', path: '/events' },
-    { icon: Package, label: 'Results', path: '/results' },
+    { icon: Package, label: 'Results', path: '/results' },  
     { icon: BookOpen, label: 'Bookings', path: '/bookings' },
     { icon: Calendar, label: 'Calendar', path: '/calendar' },
   ];
 
-  const navItems =
-    userRole === 'admin'
-      ? [
-          { icon: Home, label: 'Home', path: '/admin/dashboard' },
-          ...baseNavItems,
-        ]
-      : [
-          { icon: Home, label: 'Home', path: '/dashboard' },
-          ...baseNavItems,
-        ];
-
+  const navItems = userRole === 'admin' ? adminNavItems : participantNavItems;
 
   return (
     <aside className="w-20 bg-emerald-500 min-h-screen fixed left-0 top-0 flex flex-col items-center py-6 space-y-8">

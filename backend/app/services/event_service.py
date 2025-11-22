@@ -192,3 +192,28 @@ class EventService:
             )
 
         return event
+
+    # ---------------- DELETE EVENT ----------------
+    def delete_event(self, event_id: str, current_admin_id: str):
+        """
+        Delete an existing event.
+        Only the admin who created the event can delete it.
+        """
+        event = self.get_event_by_id(event_id)
+
+        if event.created_by != current_admin_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to delete this event"
+            )
+
+        try:
+            self.db.delete(event)
+            self.db.commit()
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error: {str(e)}"
+            )
+        return {"message": "Event deleted successfully"}

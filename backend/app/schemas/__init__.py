@@ -25,6 +25,18 @@ from app.schemas.booking import (
     CancelBookingResponse,
 )
 
+from app.schemas.result import (
+    ResultUploadRequest,
+    ResultResponse,
+    ResultListResponse,
+    SendResultSMSRequest,
+    SendResultSMSResponse,
+    ParticipantResultResponse,
+    RequestResultOTPResponse,
+    ViewResultResponse,
+)
+
+
 __all__ = [
     # Auth schemas
     "ParticipantRegisterRequest",
@@ -47,4 +59,13 @@ __all__ = [
     "BookingWithEventResponse",
     "BookingListResponse",
     "CancelBookingResponse",
+    # Result schemas
+    "ResultUploadRequest",
+    "ResultResponse",
+    "ResultListResponse",
+    "SendResultSMSRequest",
+    "SendResultSMSResponse",
+    "ParticipantResultResponse",
+    "RequestResultOTPResponse",
+    "ViewResultResponse",
 ]
