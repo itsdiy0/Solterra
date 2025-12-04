@@ -426,8 +426,8 @@ export default function AdminEventDetailPage() {
                         setEditLatitude(lat);
                         setEditLongitude(lng);
                       }}
-                      initialLat={editLatitude}
-                      initialLng={editLongitude}
+                      initialLat={Number(event.latitude || 3.139)}   
+                      initialLng={Number(event.longitude || 101.6869)} 
                     />
                   </div>
 
