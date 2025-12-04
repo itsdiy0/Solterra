@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import Toast from '@/components/ui/toast';
+import MapView from '@/components/maps/MapView';
 import { 
   MapPin, 
   Clock, 
@@ -14,7 +15,8 @@ import {
   Users,
   CheckCircle,
   ChevronLeft,
-  Info
+  Info,
+  Navigation
 } from 'lucide-react';
 
 interface Event {
@@ -26,6 +28,8 @@ interface Event {
   total_slots: number;
   available_slots: number;
   additional_info: string;
+  latitude: number | null;
+  longitude: number | null;
   time_slots?: TimeSlot[];
 }
 
@@ -99,21 +103,18 @@ export default function EventBookingPage() {
   const fetchEventAndTimeSlots = async () => {
     setLoading(true);
     try {
-      // Fetch event details
       const eventRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}`);
       const eventData = await eventRes.json();
       setEvent(eventData);
 
-      // Fetch time slots
       const slotsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/${eventId}/time-slots`);
       const slotsData = await slotsRes.json();
       
       setHasTimeSlots(slotsData.has_time_slots);
       setTimeSlots(slotsData.slots || []);
-    } catch (err) {
-      console.error('Failed to fetch event', err);
+    } catch (err: any) {
       setToast({
-        message: 'Failed to load event',
+        message: err.message || 'Failed to load event',
         type: 'error',
         show: true,
       });
@@ -242,7 +243,7 @@ export default function EventBookingPage() {
               <p className="text-gray-500">Event not found</p>
               <Button
                 onClick={() => router.push('/events')}
-                className="mt-4 bg-emerald-500 hover:bg-emerald-600"
+                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
               >
                 Back to Events
               </Button>
@@ -359,6 +360,40 @@ export default function EventBookingPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Event Location Map */}
+{event.latitude && event.longitude ? (
+  <div className="mb-6">
+    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+      <MapPin className="w-5 h-5 text-emerald-600" />
+      Event Location
+    </h3>
+    <MapView 
+      lat={Number(event.latitude)}
+      lng={Number(event.longitude)} 
+      title={event.name}
+      height="300px"
+    />
+    <Button
+      type="button"
+      onClick={() => window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`, 
+        '_blank'
+      )}
+      variant="outline"
+      className="w-full mt-3 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+    >
+      <Navigation className="w-4 h-4 mr-2" />
+      Get Directions
+    </Button>
+  </div>
+) : (
+  <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+    <p className="text-sm text-amber-700">
+      📍 Location coordinates not available for this event
+    </p>
+  </div>
+)}
 
                   {/* Eligibility Info */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -580,7 +615,7 @@ export default function EventBookingPage() {
               </div>
             )}
 
-            {/* Step 3: Time Slot Selection (if applicable) */}
+            {/* Step 3: Time Slot Selection */}
             {currentStep === 'time-slot' && hasTimeSlots && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
