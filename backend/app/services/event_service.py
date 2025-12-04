@@ -43,7 +43,16 @@ class EventService:
         coordinates = None
         if self.google_api_key:
             coordinates = self._validate_address(event_data.address)
-
+        
+        lat = event_data.latitude
+        lng = event_data.longitude
+    
+        if not lat or not lng:
+            if self.google_api_key:
+                coordinates = self._validate_address(event_data.address)
+                lat = coordinates["lat"]
+                lng = coordinates["lng"]    
+        
         new_event = Event(
             name=event_data.name.strip(),
             event_date=event_data.event_date,
@@ -54,8 +63,8 @@ class EventService:
             additional_info=event_data.additional_info,
             status=event_data.status,
             created_by=created_by,
-            latitude=coordinates["lat"] if coordinates else None,
-            longitude=coordinates["lng"] if coordinates else None,
+            latitude=lat,
+            longitude=lng
         )
 
         try:

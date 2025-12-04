@@ -131,7 +131,7 @@ export default function AdminEventsPage() {
 
               return (
                 <Card key={event.id}>
-                  <CardContent className="p-6">
+                  <CardContent>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">

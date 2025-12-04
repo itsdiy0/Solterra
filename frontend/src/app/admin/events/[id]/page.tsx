@@ -10,7 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, MapPin, Users, Edit, Save, X, Trash2, Eye } from 'lucide-react';
+import { Calendar, MapPin, Users, Edit, Save, X, Trash2 } from 'lucide-react';
+import MapPicker from '@/components/maps/MapPicker';
+import MapView from '@/components/maps/MapView';
+import Toast from '@/components/ui/toast';
 
 interface Event {
   id: string;
@@ -34,7 +37,6 @@ export default function AdminEventDetailPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -43,9 +45,21 @@ export default function AdminEventDetailPage() {
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [editLatitude, setEditLatitude] = useState<number>(3.139);
+  const [editLongitude, setEditLongitude] = useState<number>(101.6869);
   const [editTotalSlots, setEditTotalSlots] = useState('');
   const [editAdditionalInfo, setEditAdditionalInfo] = useState('');
   const [editStatus, setEditStatus] = useState('');
+
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error';
+    show: boolean;
+  }>({
+    message: '',
+    type: 'success',
+    show: false,
+  });
 
   useEffect(() => {
     fetchEvent();
@@ -69,14 +83,19 @@ export default function AdminEventDetailPage() {
       // Initialize edit form
       setEditName(data.name);
       setEditDate(data.event_date);
-      setEditTime(data.event_time.slice(0, 5)); // HH:MM format
+      setEditTime(data.event_time.slice(0, 5));
       setEditAddress(data.address);
+      setEditLatitude(data.latitude || 3.139);
+      setEditLongitude(data.longitude || 101.6869);
       setEditTotalSlots(data.total_slots.toString());
       setEditAdditionalInfo(data.additional_info || '');
       setEditStatus(data.status);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load event');
+    } catch (err: any) {
+      setToast({
+        message: err.message || 'Failed to load event',
+        type: 'error',
+        show: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -87,12 +106,13 @@ export default function AdminEventDetailPage() {
   };
 
   const handleCancelEdit = () => {
-    // Reset form to original values
     if (event) {
       setEditName(event.name);
       setEditDate(event.event_date);
       setEditTime(event.event_time.slice(0, 5));
       setEditAddress(event.address);
+      setEditLatitude(event.latitude || 3.139);
+      setEditLongitude(event.longitude || 101.6869);
       setEditTotalSlots(event.total_slots.toString());
       setEditAdditionalInfo(event.additional_info || '');
       setEditStatus(event.status);
@@ -102,7 +122,6 @@ export default function AdminEventDetailPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    setError('');
 
     const token = localStorage.getItem('access_token');
 
@@ -134,19 +153,24 @@ export default function AdminEventDetailPage() {
       const updated = await res.json();
       setEvent(updated);
       setIsEditing(false);
-      alert('Event updated successfully!');
+      
+      setToast({
+        message: 'Event updated successfully!',
+        type: 'success',
+        show: true,
+      });
     } catch (err: any) {
-      setError(err.message || 'Failed to update event');
+      setToast({
+        message: err.message || 'Failed to update event',
+        type: 'error',
+        show: true,
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this event? This cannot be undone.')) {
-      return;
-    }
-
     const token = localStorage.getItem('access_token');
 
     try {
@@ -162,10 +186,19 @@ export default function AdminEventDetailPage() {
         throw new Error(errData.detail || 'Failed to delete event');
       }
 
-      alert('Event deleted successfully!');
-      router.push('/admin/events');
+      setToast({
+        message: 'Event deleted successfully!',
+        type: 'success',
+        show: true,
+      });
+
+      setTimeout(() => router.push('/admin/events'), 1500);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete event');
+      setToast({
+        message: err.message || 'Failed to delete event',
+        type: 'error',
+        show: true,
+      });
     }
   };
 
@@ -174,16 +207,6 @@ export default function AdminEventDetailPage() {
       <ProtectedRoute requiredRole="admin">
         <DashboardLayout title="Event Details">
           <p className="text-gray-500 text-center py-12">Loading event...</p>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  if (error && !event) {
-    return (
-      <ProtectedRoute requiredRole="admin">
-        <DashboardLayout title="Event Details">
-          <p className="text-red-600 text-center py-12">{error}</p>
         </DashboardLayout>
       </ProtectedRoute>
     );
@@ -205,7 +228,14 @@ export default function AdminEventDetailPage() {
   return (
     <ProtectedRoute requiredRole="admin">
       <DashboardLayout title="Event Details">
-        <div className="max-w-4xl mx-auto">
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          show={toast.show}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+
+        <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-6 flex justify-between items-start">
             <div>
@@ -230,7 +260,7 @@ export default function AdminEventDetailPage() {
                 </Button>
                 <Button
                   onClick={handleEdit}
-                  className="bg-emerald-500 hover:bg-emerald-600"
+                  className="bg-emerald-600 hover:bg-emerald-700"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Event
@@ -238,12 +268,6 @@ export default function AdminEventDetailPage() {
               </div>
             )}
           </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
 
           {/* Event Details / Edit Form */}
           <Card>
@@ -265,7 +289,6 @@ export default function AdminEventDetailPage() {
               {!isEditing ? (
                 // VIEW MODE
                 <>
-                  {/* Basic Info */}
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <Label className="text-gray-500 text-sm">Event Name</Label>
@@ -294,14 +317,22 @@ export default function AdminEventDetailPage() {
                   </div>
 
                   <div>
-                    <Label className="text-gray-500 text-sm">Address</Label>
-                    <div className="flex items-start gap-2 mt-1">
+                    <Label className="text-gray-500 text-sm mb-2 block">Location</Label>
+                    <div className="flex items-start gap-2 mb-3">
                       <MapPin className="w-4 h-4 text-gray-500 mt-1" />
                       <p className="text-lg font-medium">{event.address}</p>
                     </div>
+                    
+                    {event.latitude && event.longitude && (
+                      <MapView 
+                        lat={event.latitude} 
+                        lng={event.longitude}
+                        title={event.name}
+                        height="300px"
+                      />
+                    )}
                   </div>
 
-                  {/* Capacity */}
                   <div>
                     <Label className="text-gray-500 text-sm mb-2 block">Capacity</Label>
                     <div className="flex items-center gap-3 mb-2">
@@ -327,7 +358,6 @@ export default function AdminEventDetailPage() {
                     </p>
                   </div>
 
-                  {/* Additional Info */}
                   {event.additional_info && (
                     <div>
                       <Label className="text-gray-500 text-sm">Additional Information</Label>
@@ -337,7 +367,6 @@ export default function AdminEventDetailPage() {
                     </div>
                   )}
 
-                  {/* Delete Button */}
                   <div className="pt-6 border-t">
                     <Button
                       onClick={handleDelete}
@@ -359,7 +388,7 @@ export default function AdminEventDetailPage() {
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       required
-                      className="h-12"
+                      className="h-11"
                     />
                   </div>
 
@@ -372,7 +401,7 @@ export default function AdminEventDetailPage() {
                         value={editDate}
                         onChange={(e) => setEditDate(e.target.value)}
                         required
-                        className="h-12"
+                        className="h-11"
                       />
                     </div>
                     <div className="space-y-2">
@@ -383,19 +412,22 @@ export default function AdminEventDetailPage() {
                         value={editTime}
                         onChange={(e) => setEditTime(e.target.value)}
                         required
-                        className="h-12"
+                        className="h-11"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Address *</Label>
-                    <Input
-                      id="address"
-                      value={editAddress}
-                      onChange={(e) => setEditAddress(e.target.value)}
-                      required
-                      className="h-12"
+                    <Label>Event Location *</Label>
+                    <MapPicker
+                      address={editAddress}
+                      onAddressChange={setEditAddress}
+                      onCoordinatesChange={(lat, lng) => {
+                        setEditLatitude(lat);
+                        setEditLongitude(lng);
+                      }}
+                      initialLat={Number(event.latitude || 3.139)}   
+                      initialLng={Number(event.longitude || 101.6869)} 
                     />
                   </div>
 
@@ -408,7 +440,7 @@ export default function AdminEventDetailPage() {
                       value={editTotalSlots}
                       onChange={(e) => setEditTotalSlots(e.target.value)}
                       required
-                      className="h-12"
+                      className="h-11"
                     />
                     <p className="text-xs text-gray-500">
                       Minimum: {bookedSlots} (already booked slots)
@@ -421,7 +453,7 @@ export default function AdminEventDetailPage() {
                       id="additional_info"
                       value={editAdditionalInfo}
                       onChange={(e) => setEditAdditionalInfo(e.target.value)}
-                      rows={4}
+                      rows={3}
                       className="resize-none"
                     />
                   </div>
@@ -429,7 +461,7 @@ export default function AdminEventDetailPage() {
                   <div className="space-y-2">
                     <Label htmlFor="status">Status *</Label>
                     <Select value={editStatus} onValueChange={setEditStatus}>
-                      <SelectTrigger className="h-12">
+                      <SelectTrigger className="h-11">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -445,7 +477,7 @@ export default function AdminEventDetailPage() {
                       type="button"
                       variant="outline"
                       onClick={handleCancelEdit}
-                      className="flex-1 h-12"
+                      className="flex-1 h-12 font-medium"
                       disabled={isSaving}
                     >
                       <X className="w-4 h-4 mr-2" />
@@ -455,11 +487,9 @@ export default function AdminEventDetailPage() {
                       type="button"
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="flex-1 h-12 bg-emerald-500 hover:bg-emerald-600"
+                      className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
                     >
-                      {isSaving ? (
-                        'Saving...'
-                      ) : (
+                      {isSaving ? 'Saving...' : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
                           Save Changes
