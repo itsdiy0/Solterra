@@ -78,7 +78,9 @@ class EventCreateRequest(BaseModel):
     total_slots: int = Field(..., gt=0, le=200)
     additional_info: Optional[str] = None
     status: str = Field(default="draft", pattern="^(draft|published)$")
-
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    
     @validator('event_date')
     def validate_event_date(cls, v):
         """Ensure event date is not in the past"""
