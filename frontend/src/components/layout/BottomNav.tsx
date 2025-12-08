@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Home, Calendar, Package, BookOpen, ClipboardList } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function Sidebar() {
+export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function Sidebar() {
     { icon: ClipboardList, label: 'Events', path: '/admin/events' },
     { icon: Package, label: 'Results', path: '/admin/results' },
     { icon: BookOpen, label: 'Bookings', path: '/admin/bookings' },
-    { icon: Calendar, label: 'Calendar', path: '/admin/calendar' }, 
+    { icon: Calendar, label: 'Calendar', path: '/admin/calendar' },
   ];
 
   const participantNavItems = [
@@ -34,33 +34,38 @@ export default function Sidebar() {
     { icon: ClipboardList, label: 'Events', path: '/events' },
     { icon: Package, label: 'Results', path: '/results' },
     { icon: BookOpen, label: 'Bookings', path: '/bookings' },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' }, 
+    { icon: Calendar, label: 'Calendar', path: '/calendar' },
   ];
 
   const navItems = userRole === 'admin' ? adminNavItems : participantNavItems;
 
   return (
-    <aside className="hidden md:flex w-20 bg-emerald-500 min-h-screen fixed left-0 top-0 flex-col items-center py-6 space-y-8">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const isActive = pathname === item.path;
-        
-        return (
-          <button
-            key={item.path}
-            onClick={() => router.push(item.path)}
-            className={`flex font-bold flex-col items-center gap-1 p-3 rounded-lg transition-colors ${
-              isActive 
-                ? 'bg-white/20 text-white' 
-                : 'text-white/70 hover:text-white hover:bg-white/10'
-            }`}
-            title={item.label}
-          >
-            <Icon className="w-6 h-6" />
-            <span className="text-xs">{item.label}</span>
-          </button>
-        );
-      })}
-    </aside>
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-emerald-500 shadow-lg z-50">
+      <div className="flex items-center justify-around h-16 px-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.path;
+
+          return (
+            <button
+              key={item.path}
+              onClick={() => router.push(item.path)}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all ${
+                isActive
+                  ? 'text-white'
+                  : 'text-white/60 hover:text-white/90'
+              }`}
+            >
+              <div className={`${isActive ? 'bg-white/20 p-2 rounded-lg' : 'p-2'}`}>
+                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
+              </div>
+              <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
