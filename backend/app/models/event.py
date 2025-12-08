@@ -18,8 +18,10 @@ class Event(Base):
     __tablename__ = "events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_code = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
     event_date = Column(Date, nullable=False, index=True)
+    event_code = Column(String(20), unique=True, nullable=False, index=True)
     event_time = Column(Time, nullable=False)
     address = Column(Text, nullable=False)
     latitude = Column(Numeric(10, 8))
