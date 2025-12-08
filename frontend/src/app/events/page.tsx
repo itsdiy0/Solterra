@@ -13,6 +13,7 @@ interface Event {
   id: string;
   name: string;
   event_date: string;
+  event_code: string;
   event_time: string;
   address: string;
   available_slots: number;
@@ -132,7 +133,7 @@ export default function EventsPage() {
 
       <div className="mb-6">
         <h2 className="text-2xl font-bold mb-4">Browse Events</h2>
-        
+
         <div className="flex gap-4 items-end">
           <div className="flex-1">
             <div className="relative">
@@ -198,7 +199,7 @@ export default function EventsPage() {
                   <div className="flex items-start justify-between gap-6">
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-900 mb-3">{event.name}</h3>
-
+                      <p className="text-xs text-gray-500 font-mono mb-3">{event.event_code}</p>
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-gray-600">
                           <CalendarIcon className="w-4 h-4 text-emerald-600" />
@@ -241,20 +242,18 @@ export default function EventsPage() {
                         </div>
                         <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full transition-all ${
-                              event.available_slots === 0
+                            className={`h-full transition-all ${event.available_slots === 0
                                 ? 'bg-red-500'
                                 : percentage >= 80
-                                ? 'bg-amber-500'
-                                : 'bg-emerald-500'
-                            }`}
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
+                              }`}
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
                       </div>
                     </div>
 
-                    {/* Action Area */}
                     <div className="flex flex-col items-end gap-3 min-w-[160px]">
                       {userRole === 'participant' ? (
                         <>
@@ -275,7 +274,7 @@ export default function EventsPage() {
                             </Button>
                           ) : (
                             <Button
-                              onClick={() => router.push(`/events/${event.id}`)}
+                              onClick={() => router.push(`/events/${event.event_code}`)}
                               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
                             >
                               Book Now
@@ -283,17 +282,10 @@ export default function EventsPage() {
                             </Button>
                           )}
                         </>
-                      ) : userRole === 'admin' ? (
-                        <Button
-                          onClick={() => router.push(`/admin/events/${event.id}`)}
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Manage Event
-                        </Button>
                       ) : (
+                        // Guest view - no booking functionality
                         <Button
-                          onClick={() => router.push(`/events/${event.id}`)}
+                          onClick={() => router.push(`/events/${event.event_code}`)}
                           variant="outline"
                           className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                         >
