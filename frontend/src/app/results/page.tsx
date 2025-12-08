@@ -48,7 +48,7 @@ export default function MyResultsPage() {
 
   const fetchResults = async () => {
     const token = localStorage.getItem('access_token');
-    
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/results`, {
         headers: {
@@ -222,8 +222,51 @@ export default function MyResultsPage() {
               return (
                 <Card key={result.id} className="hover:shadow-md transition-shadow">
                   <CardContent>
-                    <div className="flex items-center gap-6">
-                      
+
+                    {/* Mobile: Stack Layout */}
+                    <div className="flex flex-col md:hidden gap-3">
+                      {/* Status Badge */}
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${config.color} self-start`}>
+                        <ResultIcon className="w-4 h-4" />
+                        <span className="text-sm font-medium">
+                          {config.text}
+                        </span>
+                      </div>
+
+                      {/* Event Info */}
+                      <div>
+                        <p className="font-medium text-gray-900 mb-2">{result.event_name}</p>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{new Date(result.event_date).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {result.result_available ? 'Uploaded' : 'Attended'}: {new Date(result.uploaded_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      {/* Action Button */}
+                      {result.result_available ? (
+                        <Button
+                          onClick={() => router.push(`/results/${result.id}`)}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-11"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Result
+                        </Button>
+                      ) : (
+                        <Button
+                          disabled
+                          className="w-full bg-gray-200 text-gray-500 cursor-not-allowed h-11"
+                        >
+                          Result Pending
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Desktop: Row Layout */}
+                    <div className="hidden md:flex items-center gap-6">
+
                       {/* Status Badge */}
                       <div className="flex-shrink-0">
                         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${config.color}`}>
@@ -240,7 +283,7 @@ export default function MyResultsPage() {
                         <div className="flex items-center gap-3 text-sm text-gray-600">
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            <span>Event Date: {new Date(result.event_date).toLocaleDateString()}</span>
+                            <span>Event: {new Date(result.event_date).toLocaleDateString()}</span>
                           </div>
                         </div>
                       </div>
@@ -254,9 +297,9 @@ export default function MyResultsPage() {
                           {new Date(result.uploaded_at).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(result.uploaded_at).toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                          {new Date(result.uploaded_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </p>
                       </div>
