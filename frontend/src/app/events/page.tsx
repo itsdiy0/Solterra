@@ -1,13 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Calendar as CalendarIcon, MapPin, Clock, Users, ArrowRight, CheckCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Toast from '@/components/ui/toast';
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  Users,
+  CheckCircle,
+  ArrowRight,
+  Search,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface Event {
   id: string;
@@ -29,12 +40,15 @@ interface Booking {
   };
 }
 
+type FilterType = 'all' | 'available' | 'booked' | 'past';
+
 export default function EventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [bookedEventIds, setBookedEventIds] = useState<Set<string>>(new Set());
   const [searchLocation, setSearchLocation] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [toast, setToast] = useState<{
@@ -47,17 +61,15 @@ export default function EventsPage() {
     show: false,
   });
 
+  const ITEMS_PER_PAGE = 12;
+
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUserRole(payload.role);
-        if (payload.role === 'participant') {
-          fetchParticipantBookings(token);
-        }
-      } catch (e) {
-        console.error('Failed to decode token:', e);
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUserRole(payload.role);
+      if (payload.role === 'participant') {
+        fetchParticipantBookings(token);
       }
     }
     fetchEvents();
@@ -66,24 +78,16 @@ export default function EventsPage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const url = userRole === 'admin'
-        ? `${process.env.NEXT_PUBLIC_API_URL}/events/?published_only=false`
-        : `${process.env.NEXT_PUBLIC_API_URL}/events/?published_only=true`;
-
-      const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const res = await fetch(url, { headers });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`);
       if (!res.ok) throw new Error('Failed to fetch events');
-
       const data = await res.json();
-      setEvents(data.events || data);
+      setEvents(data);
     } catch (err: any) {
-      console.error('Error fetching events:', err);
-      setToast({ message: err.message || 'Error fetching events', type: 'error', show: true });
+      setToast({
+        message: err.message || 'Failed to load events',
+        type: 'error',
+        show: true,
+      });
     } finally {
       setLoading(false);
     }
@@ -91,17 +95,22 @@ export default function EventsPage() {
 
   const fetchParticipantBookings = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-      if (!res.ok) return;
-
-      const data: Booking[] = await res.json();
-      const bookedIds = new Set(data.map((b) => b.event.id));
-      setBookedEventIds(bookedIds);
+      if (res.ok) {
+        const data = await res.json();
+        const bookedIds: Set<string> = new Set(
+          data.bookings
+            .filter((b: any) => b.booking_status !== 'cancelled')
+            .map((b: any) => b.event.id)
+        );
+        setBookedEventIds(bookedIds);
+      }
     } catch (err) {
-      console.error('Error fetching participant bookings:', err);
+      console.error('Failed to fetch bookings:', err);
     }
   };
 
@@ -116,202 +125,346 @@ export default function EventsPage() {
     return (current / total) * 100;
   };
 
-  const filteredEvents = events.filter((event) => {
-    const matchesLocation = event.address.toLowerCase().includes(searchLocation.toLowerCase());
-    const matchesDate = selectedDate ? event.event_date === selectedDate : true;
-    return matchesLocation && matchesDate;
-  });
+  const isEventPast = (eventDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDateTime = new Date(eventDate);
+    eventDateTime.setHours(0, 0, 0, 0);
+    return eventDateTime < today;
+  };
+
+  // Sort and filter events
+  const getSortedAndFilteredEvents = () => {
+    let filtered = events.filter((event) => {
+      const matchesLocation = event.address.toLowerCase().includes(searchLocation.toLowerCase());
+      const isPast = isEventPast(event.event_date);
+      const isBooked = bookedEventIds.has(event.id);
+
+      if (activeFilter === 'available') {
+        return matchesLocation && !isPast && !isBooked && event.available_slots > 0;
+      } else if (activeFilter === 'booked') {
+        return matchesLocation && isBooked && !isPast;
+      } else if (activeFilter === 'past') {
+        return matchesLocation && isPast;
+      }
+      return matchesLocation; // 'all'
+    });
+
+    // Sort: available first, booked second, past/cancelled last
+    return filtered.sort((a, b) => {
+      const aIsPast = isEventPast(a.event_date);
+      const bIsPast = isEventPast(b.event_date);
+      const aIsBooked = bookedEventIds.has(a.id);
+      const bIsBooked = bookedEventIds.has(b.id);
+      const aFullyBooked = a.available_slots === 0;
+      const bFullyBooked = b.available_slots === 0;
+
+      // Past events go last
+      if (aIsPast && !bIsPast) return 1;
+      if (!aIsPast && bIsPast) return -1;
+
+      // For non-past events
+      if (!aIsPast && !bIsPast) {
+        // Available to book first
+        if (!aIsBooked && !aFullyBooked && (bIsBooked || bFullyBooked)) return -1;
+        if ((aIsBooked || aFullyBooked) && !bIsBooked && !bFullyBooked) return 1;
+
+        // Already booked second
+        if (aIsBooked && !bIsBooked && !bFullyBooked) return -1;
+        if (!aIsBooked && !aFullyBooked && bIsBooked) return 1;
+      }
+
+      // Sort by date (newest first for upcoming, oldest first for past)
+      return aIsPast
+        ? new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+        : new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
+    });
+  };
+
+  const sortedAndFilteredEvents = getSortedAndFilteredEvents();
+
+  // Pagination
+  const totalPages = Math.ceil(sortedAndFilteredEvents.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedEvents = sortedAndFilteredEvents.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchLocation]);
+
+  // Count badges
+  const availableCount = events.filter(e => !isEventPast(e.event_date) && !bookedEventIds.has(e.id) && e.available_slots > 0).length;
+  const bookedCount = events.filter(e => bookedEventIds.has(e.id) && !isEventPast(e.event_date)).length;
+  const pastCount = events.filter(e => isEventPast(e.event_date)).length;
 
   return (
-    <DashboardLayout title="Events">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        show={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
+    <ProtectedRoute requiredRole="participant">
+      <DashboardLayout title="Browse Events">
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          show={toast.show}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Browse Events</h2>
+        {/* Search Bar */}
+        <div className="mb-6">
 
-        <div className="flex gap-4 items-end">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search by location..."
-                value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-                className="pl-10 h-12"
-              />
-            </div>
-          </div>
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Input
+            type="text"
+            placeholder="Search by location..."
+            value={searchLocation}
+            onChange={(e) => setSearchLocation(e.target.value)}
+            className="pl-10 h-12"
+          />
 
-          <div className="flex-1">
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="pl-10 h-12"
-              />
-            </div>
-          </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500">Loading events...</p>
+        {/* Filter Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <Button
+            onClick={() => setActiveFilter('all')}
+            variant={activeFilter === 'all' ? 'default' : 'outline'}
+            className={activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+          >
+            All Events
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs">
+              {events.length}
+            </span>
+          </Button>
+          <Button
+            onClick={() => setActiveFilter('available')}
+            variant={activeFilter === 'available' ? 'default' : 'outline'}
+            className={activeFilter === 'available' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+          >
+            Available
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs">
+              {availableCount}
+            </span>
+          </Button>
+          {userRole === 'participant' && (
+            <Button
+              onClick={() => setActiveFilter('booked')}
+              variant={activeFilter === 'booked' ? 'default' : 'outline'}
+              className={activeFilter === 'booked' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            >
+              My Bookings
+              <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs">
+                {bookedCount}
+              </span>
+            </Button>
+          )}
+          <Button
+            onClick={() => setActiveFilter('past')}
+            variant={activeFilter === 'past' ? 'default' : 'outline'}
+            className={activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+          >
+            Past Events
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs">
+              {pastCount}
+            </span>
+          </Button>
         </div>
-      ) : filteredEvents.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <p className="text-gray-500 mb-4">No events found</p>
-            {(searchLocation || selectedDate) && (
-              <Button
-                onClick={() => {
-                  setSearchLocation('');
-                  setSelectedDate('');
-                }}
-                variant="outline"
-              >
-                Clear Filters
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filteredEvents.map((event) => {
-            const bookedSlots = event.total_slots - event.available_slots;
-            const percentage = capacityPercentage(bookedSlots, event.total_slots);
-            const isBooked = bookedEventIds.has(event.id);
 
-            return (
-              <Card
-                key={event.id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardContent>
-                  <div className="flex items-start justify-between gap-6">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">{event.name}</h3>
-                      <p className="text-xs text-gray-500 font-mono mb-3">{event.event_code}</p>
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <CalendarIcon className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm">
-                            {new Date(event.event_date).toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
-                          </span>
-                        </div>
+        {/* Events Grid */}
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading events...</p>
+          </div>
+        ) : paginatedEvents.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <p className="text-gray-500">No events found</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+              {paginatedEvents.map((event) => {
+                const bookedSlots = event.total_slots - event.available_slots;
+                const percentage = capacityPercentage(bookedSlots, event.total_slots);
+                const isBooked = bookedEventIds.has(event.id);
+                const isPast = isEventPast(event.event_date);
 
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm">{event.event_time.slice(0, 5)} onwards</span>
-                        </div>
-
-                        <div className="flex items-start gap-2 text-gray-600">
-                          <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{event.address}</span>
-                        </div>
-                      </div>
-
-                      {/* Capacity Bar */}
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-600 flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            Capacity
-                          </span>
-                          <span className="text-xs font-medium text-gray-900">
-                            {bookedSlots} / {event.total_slots} booked
-                            {event.available_slots > 0 && (
-                              <span className="text-emerald-600 ml-1">
-                                ({event.available_slots} spots left)
+                return (
+                  <Card
+                    key={event.id}
+                    className={`hover:shadow-lg transition-shadow ${isPast ? 'opacity-60' : ''}`}
+                  >
+                    <CardContent className={isPast ? 'pointer-events-none' : ''}>
+                      <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6">
+                        <div className="flex-1 w-full">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="text-xl font-bold text-gray-900">{event.name}</h3>
+                            {isPast && (
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                Past Event
                               </span>
                             )}
-                          </span>
-                        </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all ${event.available_slots === 0
-                                ? 'bg-red-500'
-                                : percentage >= 80
-                                  ? 'bg-amber-500'
-                                  : 'bg-emerald-500'
-                              }`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                          </div>
+                          <p className="text-xs text-gray-500 font-mono mb-3">{event.event_code}</p>
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <CalendarIcon className="w-4 h-4 text-emerald-600" />
+                              <span className="text-sm">
+                                {new Date(event.event_date).toLocaleDateString('en-US', {
+                                  weekday: 'long',
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                            </div>
 
-                    <div className="flex flex-col items-end gap-3 min-w-[160px]">
-                      {userRole === 'participant' ? (
-                        <>
-                          {isBooked ? (
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Clock className="w-4 h-4 text-emerald-600" />
+                              <span className="text-sm">{event.event_time.slice(0, 5)} onwards</span>
+                            </div>
+
+                            <div className="flex items-start gap-2 text-gray-600">
+                              <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-sm">{event.address}</span>
+                            </div>
+                          </div>
+
+                          {/* Capacity Bar */}
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-gray-600 flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                Capacity
+                              </span>
+                              <span className="text-xs font-medium text-gray-900">
+                                {bookedSlots} / {event.total_slots} booked
+                                {event.available_slots > 0 && !isPast && (
+                                  <span className="text-emerald-600 ml-1">
+                                    ({event.available_slots} spots left)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all ${event.available_slots === 0
+                                    ? 'bg-red-500'
+                                    : percentage >= 80
+                                      ? 'bg-amber-500'
+                                      : 'bg-emerald-500'
+                                  }`}
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3 w-full md:w-auto md:min-w-[160px]">
+                          {!isPast && userRole === 'participant' ? (
+                            <>
+                              {isBooked ? (
+                                <Button
+                                  onClick={() => router.push('/bookings')}
+                                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Already Booked
+                                </Button>
+                              ) : event.available_slots === 0 ? (
+                                <Button
+                                  disabled
+                                  className="w-full bg-red-100 text-red-700 font-semibold cursor-not-allowed"
+                                >
+                                  Fully Booked
+                                </Button>
+                              ) : (
+                                <Button
+                                  onClick={() => router.push(`/events/${event.event_code}`)}
+                                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
+                                >
+                                  Book Now
+                                  <ArrowRight className="w-4 h-4 ml-2" />
+                                </Button>
+                              )}
+                            </>
+                          ) : !isPast ? (
                             <Button
-                              onClick={() => router.push('/bookings')}
-                              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold"
+                              onClick={() => router.push(`/events/${event.event_code}`)}
+                              variant="outline"
+                              className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                             >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Already Booked
-                            </Button>
-                          ) : event.available_slots === 0 ? (
-                            <Button
-                              disabled
-                              className="w-full bg-red-100 text-red-700 font-semibold cursor-not-allowed"
-                            >
-                              Fully Booked
+                              View Details
                             </Button>
                           ) : (
                             <Button
-                              onClick={() => router.push(`/events/${event.event_code}`)}
-                              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
+                              disabled
+                              variant="outline"
+                              className="w-full cursor-not-allowed"
                             >
-                              Book Now
-                              <ArrowRight className="w-4 h-4 ml-2" />
+                              Event Ended
                             </Button>
                           )}
-                        </>
-                      ) : (
-                        // Guest view - no booking functionality
-                        <Button
-                          onClick={() => router.push(`/events/${event.event_code}`)}
-                          variant="outline"
-                          className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                        >
-                          View Details
-                        </Button>
-                      )}
 
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleWhatsAppShare(event);
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Share via WhatsApp
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </DashboardLayout>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWhatsAppShare(event);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            disabled={isPast}
+                          >
+                            Share via WhatsApp
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      variant={currentPage === page ? 'default' : 'outline'}
+                      size="sm"
+                      className={currentPage === page ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }
