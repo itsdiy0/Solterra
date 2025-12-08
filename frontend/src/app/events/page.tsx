@@ -210,7 +210,7 @@ export default function EventsPage() {
         />
 
         {/* Search Bar */}
-        <div className="mb-6">
+        <div className="mb-6 relative">
 
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
@@ -294,39 +294,41 @@ export default function EventsPage() {
                     key={event.id}
                     className={`hover:shadow-lg transition-shadow ${isPast ? 'opacity-60' : ''}`}
                   >
-                    <CardContent className={isPast ? 'pointer-events-none' : ''}>
-                      <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-6">
-                        <div className="flex-1 w-full">
+                    <CardContent>
+                      <div className="flex flex-col gap-4">
+                        {/* Event Info */}
+                        <div className="flex-1">
                           <div className="flex items-start justify-between mb-2">
-                            <h3 className="text-xl font-bold text-gray-900">{event.name}</h3>
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-2">{event.name}</h3>
                             {isPast && (
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                Past Event
+                              <span className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap ml-2">
+                                Past
                               </span>
                             )}
                           </div>
                           <p className="text-xs text-gray-500 font-mono mb-3">{event.event_code}</p>
+
                           <div className="space-y-2 mb-4">
                             <div className="flex items-center gap-2 text-gray-600">
-                              <CalendarIcon className="w-4 h-4 text-emerald-600" />
+                              <CalendarIcon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                               <span className="text-sm">
                                 {new Date(event.event_date).toLocaleDateString('en-US', {
-                                  weekday: 'long',
+                                  weekday: 'short',
                                   day: 'numeric',
-                                  month: 'long',
+                                  month: 'short',
                                   year: 'numeric',
                                 })}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-2 text-gray-600">
-                              <Clock className="w-4 h-4 text-emerald-600" />
+                              <Clock className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                               <span className="text-sm">{event.event_time.slice(0, 5)} onwards</span>
                             </div>
 
                             <div className="flex items-start gap-2 text-gray-600">
                               <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                              <span className="text-sm">{event.address}</span>
+                              <span className="text-sm line-clamp-2">{event.address}</span>
                             </div>
                           </div>
 
@@ -338,10 +340,10 @@ export default function EventsPage() {
                                 Capacity
                               </span>
                               <span className="text-xs font-medium text-gray-900">
-                                {bookedSlots} / {event.total_slots} booked
+                                {bookedSlots} / {event.total_slots}
                                 {event.available_slots > 0 && !isPast && (
                                   <span className="text-emerald-600 ml-1">
-                                    ({event.available_slots} spots left)
+                                    ({event.available_slots} left)
                                   </span>
                                 )}
                               </span>
@@ -360,13 +362,14 @@ export default function EventsPage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3 w-full md:w-auto md:min-w-[160px]">
+                        {/* Action Buttons - Stack vertically on all screen sizes */}
+                        <div className={`flex flex-col gap-2 pt-4 border-t ${isPast ? 'pointer-events-none' : ''}`}>
                           {!isPast && userRole === 'participant' ? (
                             <>
                               {isBooked ? (
                                 <Button
                                   onClick={() => router.push('/bookings')}
-                                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold"
+                                  className="w-full h-11 bg-gray-500 hover:bg-gray-600 text-white font-semibold"
                                 >
                                   <CheckCircle className="w-4 h-4 mr-2" />
                                   Already Booked
@@ -374,50 +377,59 @@ export default function EventsPage() {
                               ) : event.available_slots === 0 ? (
                                 <Button
                                   disabled
-                                  className="w-full bg-red-100 text-red-700 font-semibold cursor-not-allowed"
+                                  className="w-full h-11 bg-red-100 text-red-700 font-semibold cursor-not-allowed"
                                 >
                                   Fully Booked
                                 </Button>
                               ) : (
                                 <Button
                                   onClick={() => router.push(`/events/${event.event_code}`)}
-                                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
+                                  className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm"
                                 >
                                   Book Now
                                   <ArrowRight className="w-4 h-4 ml-2" />
                                 </Button>
                               )}
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleWhatsAppShare(event);
+                                }}
+                                variant="outline"
+                                className="w-full h-11"
+                              >
+                                Share via WhatsApp
+                              </Button>
                             </>
                           ) : !isPast ? (
-                            <Button
-                              onClick={() => router.push(`/events/${event.event_code}`)}
-                              variant="outline"
-                              className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                            >
-                              View Details
-                            </Button>
+                            <>
+                              <Button
+                                onClick={() => router.push(`/events/${event.event_code}`)}
+                                variant="outline"
+                                className="w-full h-11 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                              >
+                                View Details
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleWhatsAppShare(event);
+                                }}
+                                variant="outline"
+                                className="w-full h-11"
+                              >
+                                Share via WhatsApp
+                              </Button>
+                            </>
                           ) : (
                             <Button
                               disabled
                               variant="outline"
-                              className="w-full cursor-not-allowed"
+                              className="w-full h-11 cursor-not-allowed"
                             >
                               Event Ended
                             </Button>
                           )}
-
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleWhatsAppShare(event);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            disabled={isPast}
-                          >
-                            Share via WhatsApp
-                          </Button>
                         </div>
                       </div>
                     </CardContent>

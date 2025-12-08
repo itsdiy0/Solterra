@@ -12,12 +12,9 @@ import {
   Calendar, 
   Clock, 
   MapPin, 
-  CreditCard,
   QrCode,
   XCircle,
   CheckCircle,
-  AlertCircle,
-  X,
   Navigation
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -128,7 +125,6 @@ export default function MyBookingsPage() {
         filtered = filtered.filter(b => b.booking_status === 'cancelled');
         break;
       default:
-        // 'all' - no filter
         break;
     }
 
@@ -164,7 +160,6 @@ export default function MyBookingsPage() {
         show: true,
       });
 
-      // Update local state
       setBookings(prev =>
         prev.map(b =>
           b.id === bookingId
@@ -173,7 +168,6 @@ export default function MyBookingsPage() {
         )
       );
 
-      // Refresh bookings to get updated event slots
       setTimeout(() => fetchBookings(), 1000);
     } catch (err: any) {
       setToast({
@@ -267,10 +261,10 @@ export default function MyBookingsPage() {
         {/* QR Code Modal */}
         {showQRModal && selectedBooking && (
           <div
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
             onClick={() => setShowQRModal(false)}
           >
-            <Card className="max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <Card className="max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
               <CardContent className="p-6 text-center">
                 <h3 className="font-semibold text-lg mb-4">Check-in QR Code</h3>
                 <div className="bg-white p-4 rounded-lg inline-block mb-4">
@@ -283,7 +277,7 @@ export default function MyBookingsPage() {
                     size={200}
                   />
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{selectedBooking.booking_reference}</p>
+                <p className="text-sm font-mono text-gray-600 mb-2">{selectedBooking.booking_reference}</p>
                 <p className="text-xs text-gray-500 mb-4">
                   Show this QR code at the event for check-in
                 </p>
@@ -319,7 +313,7 @@ export default function MyBookingsPage() {
                   lat={Number(selectedEvent.latitude)}
                   lng={Number(selectedEvent.longitude)} 
                   title={selectedEvent.name}
-                  height="400px"
+                  height="300px"
                 />
                 
                 <div className="mt-4 space-y-3">
@@ -355,33 +349,37 @@ export default function MyBookingsPage() {
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-4">My Bookings</h2>
 
-          {/* Filter Tabs */}
-          <div className="flex gap-2 mb-4">
+          {/* Filter Tabs - Scrollable on mobile */}
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             <Button
               onClick={() => setActiveFilter('all')}
               variant={activeFilter === 'all' ? 'default' : 'outline'}
-              className={activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+              className={`whitespace-nowrap ${activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              size="sm"
             >
               All ({bookings.length})
             </Button>
             <Button
               onClick={() => setActiveFilter('upcoming')}
               variant={activeFilter === 'upcoming' ? 'default' : 'outline'}
-              className={activeFilter === 'upcoming' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+              className={`whitespace-nowrap ${activeFilter === 'upcoming' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              size="sm"
             >
               Upcoming ({upcomingCount})
             </Button>
             <Button
               onClick={() => setActiveFilter('past')}
               variant={activeFilter === 'past' ? 'default' : 'outline'}
-              className={activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+              className={`whitespace-nowrap ${activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              size="sm"
             >
               Past ({pastCount})
             </Button>
             <Button
               onClick={() => setActiveFilter('cancelled')}
               variant={activeFilter === 'cancelled' ? 'default' : 'outline'}
-              className={activeFilter === 'cancelled' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+              className={`whitespace-nowrap ${activeFilter === 'cancelled' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              size="sm"
             >
               Cancelled ({cancelledCount})
             </Button>
@@ -421,7 +419,91 @@ export default function MyBookingsPage() {
               return (
                 <Card key={booking.id} className={`hover:shadow-md transition-shadow ${isCancelled ? 'opacity-60' : ''}`}>
                   <CardContent>
-                    <div className="flex items-center gap-6">
+                    
+                    {/* Mobile Layout - Stack */}
+                    <div className="flex flex-col sm:hidden gap-4">
+                      {/* Header: Status + Booking Ref */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${statusConfig.color}`}>
+                          <StatusIcon className="w-4 h-4" />
+                          <span className="text-sm font-medium">
+                            {statusConfig.text}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500">Ref</p>
+                          <p className="font-mono font-semibold text-sm">
+                            {booking.booking_reference}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Event Details */}
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-gray-900">{booking.event.name}</h3>
+                        
+                        <div className="space-y-1.5 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-3 h-3 text-emerald-600" />
+                            <span>{new Date(booking.event.event_date).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3 h-3 text-emerald-600" />
+                            <span>
+                              {booking.time_slot_start && booking.time_slot_end
+                                ? `${booking.time_slot_start.slice(0, 5)} - ${booking.time_slot_end.slice(0, 5)}`
+                                : booking.event.event_time.slice(0, 5)}
+                            </span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-3 h-3 text-emerald-600 mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-2">{booking.event.address}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-gray-500 pt-2 border-t">
+                          Booked: {new Date(booking.booked_at).toLocaleDateString()} at{' '}
+                          {new Date(booking.booked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      {!isCancelled && !isPast && (
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleShowQR(booking)}
+                            variant="outline"
+                            className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-11"
+                          >
+                            <QrCode className="w-4 h-4 mr-2" />
+                          </Button>
+                          
+                          {hasLocation && (
+                            <Button
+                              onClick={() => handleShowMap(booking.event)}
+                              variant="outline"
+                              className="flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-11"
+                            >
+                              <MapPin className="w-4 h-4 mr-2" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {!isCancelled && !isPast && (
+                        <Button
+                          onClick={() => handleCancelBooking(booking.id, booking.booking_reference)}
+                          disabled={isCanceling}
+                          variant="outline"
+                          className="w-full text-red-600 border-red-300 hover:bg-red-50 h-11"
+                        >
+                          {isCanceling ? 'Cancelling...' : 'Cancel Booking'}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Desktop Layout - Row */}
+                    <div className="hidden sm:flex items-center gap-6">
                       
                       {/* Status Badge */}
                       <div className="flex-shrink-0">
@@ -434,7 +516,7 @@ export default function MyBookingsPage() {
                       </div>
 
                       {/* Booking Reference */}
-                      <div className="flex-shrink-0 w-32">
+                      <div className="flex-shrink-0 w-28">
                         <p className="text-xs text-gray-500 mb-1">Booking Ref</p>
                         <p className="font-mono font-semibold text-sm">
                           {booking.booking_reference}
@@ -456,10 +538,6 @@ export default function MyBookingsPage() {
                                 ? `${booking.time_slot_start.slice(0, 5)} - ${booking.time_slot_end.slice(0, 5)}`
                                 : booking.event.event_time.slice(0, 5)}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            <span className="truncate">{booking.event.address}</span>
                           </div>
                         </div>
                       </div>
