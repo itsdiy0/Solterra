@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Toast from '@/components/ui/toast';
+import MapView from '@/components/maps/MapView';
 import { 
   Calendar, 
   Clock, 
@@ -15,7 +16,9 @@ import {
   QrCode,
   XCircle,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  X,
+  Navigation
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
@@ -27,6 +30,8 @@ interface Event {
   address: string;
   total_slots: number;
   available_slots: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface Booking {
@@ -51,6 +56,8 @@ export default function MyBookingsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'error';
@@ -188,6 +195,11 @@ export default function MyBookingsPage() {
     setShowQRModal(true);
   };
 
+  const handleShowMap = (event: Event) => {
+    setSelectedEvent(event);
+    setShowMapModal(true);
+  };
+
   const getStatusConfig = (booking: Booking) => {
     const eventDate = new Date(booking.event.event_date);
     const today = new Date();
@@ -287,6 +299,59 @@ export default function MyBookingsPage() {
           </div>
         )}
 
+        {/* Map Modal */}
+        {showMapModal && selectedEvent && selectedEvent.latitude && selectedEvent.longitude && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowMapModal(false)}
+          >
+            <Card className="max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+              <CardContent className="p-6">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-lg flex items-center gap-2 mb-2">
+                    <MapPin className="w-5 h-5 text-emerald-600" />
+                    Event Location
+                  </h3>
+                  <p className="text-sm text-gray-600">{selectedEvent.name}</p>
+                </div>
+
+                <MapView 
+                  lat={Number(selectedEvent.latitude)}
+                  lng={Number(selectedEvent.longitude)} 
+                  title={selectedEvent.name}
+                  height="400px"
+                />
+                
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-start gap-2 text-sm">
+                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-gray-700">{selectedEvent.address}</p>
+                  </div>
+                  
+                  <Button
+                    onClick={() => window.open(
+                      `https://www.google.com/maps/dir/?api=1&destination=${selectedEvent.latitude},${selectedEvent.longitude}`, 
+                      '_blank'
+                    )}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    Get Directions
+                  </Button>
+
+                  <Button
+                    onClick={() => setShowMapModal(false)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-4">My Bookings</h2>
 
@@ -351,6 +416,7 @@ export default function MyBookingsPage() {
               const isCancelled = booking.booking_status === 'cancelled';
               const eventDate = new Date(booking.event.event_date);
               const isPast = eventDate < new Date();
+              const hasLocation = booking.event.latitude && booking.event.longitude;
 
               return (
                 <Card key={booking.id} className={`hover:shadow-md transition-shadow ${isCancelled ? 'opacity-60' : ''}`}>
@@ -415,14 +481,29 @@ export default function MyBookingsPage() {
                       {/* Actions */}
                       <div className="flex-shrink-0 flex gap-2">
                         {!isCancelled && !isPast && (
-                          <Button
-                            onClick={() => handleShowQR(booking)}
-                            variant="outline"
-                            size="sm"
-                            className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                          >
-                            <QrCode className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              onClick={() => handleShowQR(booking)}
+                              variant="outline"
+                              size="sm"
+                              className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                              title="View QR Code"
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </Button>
+                            
+                            {hasLocation && (
+                              <Button
+                                onClick={() => handleShowMap(booking.event)}
+                                variant="outline"
+                                size="sm"
+                                className="border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                                title="View Location"
+                              >
+                                <MapPin className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </>
                         )}
                         
                         {!isCancelled && !isPast && (
