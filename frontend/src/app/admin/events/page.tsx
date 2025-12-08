@@ -125,15 +125,15 @@ export default function AdminEventsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {events.map((event) => {
               const bookedSlots = event.total_slots - event.available_slots;
               const bookedPercentage = (bookedSlots / event.total_slots) * 100;
 
               return (
-                <Card key={event.id}>
+                <Card key={event.id} className="hover:shadow-lg transition-shadow">
                   <CardContent>
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-xl font-semibold">{event.name}</h3>
@@ -152,18 +152,18 @@ export default function AdminEventsPage() {
 
                         <div className="space-y-2 text-sm text-gray-600 mb-4">
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-4 h-4 text-emerald-600" />
                             <span>
                               {new Date(event.event_date).toLocaleDateString()} at{' '}
-                              {event.event_time}
+                              {event.event_time.slice(0, 5)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                             <span>{event.address}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Users className="w-4 h-4" />
+                            <Users className="w-4 h-4 text-emerald-600" />
                             <span>
                               {bookedSlots} / {event.total_slots} slots booked
                             </span>
@@ -171,28 +171,31 @@ export default function AdminEventsPage() {
                         </div>
 
                         {/* Capacity Bar */}
-                        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                          <div
-                            className={`h-2 rounded-full transition-all ${
-                              bookedPercentage >= 100
-                                ? 'bg-red-500'
-                                : bookedPercentage >= 80
-                                ? 'bg-amber-500'
-                                : 'bg-emerald-500'
-                            }`}
-                            style={{ width: `${Math.min(bookedPercentage, 100)}%` }}
-                          />
+                        <div className="mb-3">
+                          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                            <div
+                              className={`h-2 rounded-full transition-all ${
+                                bookedPercentage >= 100
+                                  ? 'bg-red-500'
+                                  : bookedPercentage >= 80
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
+                              }`}
+                              style={{ width: `${Math.min(bookedPercentage, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {event.available_slots} slots remaining
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          {event.available_slots} slots remaining
-                        </p>
                       </div>
 
-                      <div className="ml-6 flex flex-col gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t">
                         <Button
                           onClick={() => router.push(`/admin/events/${event.event_code}`)}
                           variant="outline"
                           size="sm"
+                          className="w-full sm:flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                         >
                           <Edit className="w-4 h-4 mr-2" />
                           Edit
@@ -201,6 +204,7 @@ export default function AdminEventsPage() {
                           onClick={() => router.push(`/admin/events/${event.event_code}/participants`)}
                           variant="outline"
                           size="sm"
+                          className="w-full sm:flex-1"
                         >
                           <Users className="w-4 h-4 mr-2" />
                           Participants
@@ -209,7 +213,7 @@ export default function AdminEventsPage() {
                           onClick={() => handleDelete(event.event_code)}
                           variant="outline"
                           size="sm"
-                          className="text-red-600 hover:bg-red-50"
+                          className="w-full sm:flex-1 text-red-600 hover:bg-red-50 border-red-300"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
