@@ -22,6 +22,7 @@ import {
 interface Event {
   id: string;
   name: string;
+  event_code: string;
   address: string;
   event_date: string;
   event_time: string;

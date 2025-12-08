@@ -1,14 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlalchemy.orm import Session
+from typing import Union
+from uuid import UUID
 from app.database import get_db
 from app.utils.security import get_current_admin
 from app.models.admin import Admin
 from app.schemas.event import EventCreateRequest, EventResponse
 from app.services.event_service import EventService
-from app.models.event import Event  
-
+from app.models.event import Event
+from app.models.booking import Booking
 
 router = APIRouter(prefix="/events", tags=["Events"])
+
+
+# ---------------- HELPER FUNCTION ----------------
+def get_event_by_identifier(db: Session, identifier: str) -> Event:
+    """Get event by UUID or event_code"""
+    
+    # First, try as event_code
+    event = db.query(Event).filter(Event.event_code == identifier).first()
+    if event:
+        return event
+    
+    # Then try as UUID
+    try:
+        from uuid import UUID
+        uuid_obj = UUID(identifier)
+        event = db.query(Event).filter(Event.id == uuid_obj).first()
+        if event:
+            return event
+    except (ValueError, TypeError):
+        # Not a valid UUID, that's fine
+        pass
+    
+    raise HTTPException(status_code=404, detail=f"Event not found: {identifier}")
+
 
 # ---------------- CREATE EVENT ----------------
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -30,37 +56,38 @@ def list_events(db: Session = Depends(get_db), published_only: bool = True):
     return service.list_events(published_only=published_only)
 
 
-# ---------------- GET EVENT BY ID ----------------
+# ---------------- GET EVENT BY ID OR CODE ----------------
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event_by_id(event_id: str, db: Session = Depends(get_db)):
-    """Get details for a specific event."""
-    service = EventService(db)
-    return service.get_event_by_id(event_id)
+    """Get details for a specific event by UUID or event code (e.g., TAN-0284)"""
+    return get_event_by_identifier(db, event_id)
 
 
 # ---------------- EDIT / UPDATE EVENT ----------------
 @router.put("/{event_id}", response_model=EventResponse)
 def edit_event(
-    event_id: str = Path(..., description="ID of the event to edit"),
+    event_id: str = Path(..., description="UUID or event code of the event to edit"),
     event_data: EventCreateRequest = ...,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
     """Edit an existing event (admin only)."""
+    event = get_event_by_identifier(db, event_id)
     service = EventService(db)
-    return service.update_event(event_id, event_data, current_admin.id)
+    return service.update_event(str(event.id), event_data, current_admin.id)
 
 
 # ---------------- DELETE EVENT ----------------
 @router.delete("/{event_id}", status_code=status.HTTP_200_OK)
 def delete_event(
-    event_id: str = Path(..., description="ID of the event to delete"),
+    event_id: str = Path(..., description="UUID or event code of the event to delete"),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
     """Delete an event (admin only)."""
+    event = get_event_by_identifier(db, event_id)
     service = EventService(db)
-    return service.delete_event(event_id, current_admin.id)
+    return service.delete_event(str(event.id), current_admin.id)
 
 
 # ---------------- GET EVENT PARTICIPANTS (ADMIN ONLY) ----------------
@@ -71,21 +98,18 @@ def get_event_participants(
     current_admin: Admin = Depends(get_current_admin)
 ):
     """Get an event with participants and their bookings."""
-    from app.models.booking import Booking
     
-    # Get event
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    # Get event by ID or code
+    event = get_event_by_identifier(db, event_id)
     
     # Get bookings for this event
-    bookings = db.query(Booking).filter(Booking.event_id == event_id).all()
+    bookings = db.query(Booking).filter(Booking.event_id == event.id).all()
     
     # Format participant data with booking info
     participants = [
         {
-            "id": str(booking.id),  # ✅ This is the booking ID (what we need!)
-            "booking_id": str(booking.id),  # ✅ Explicit booking_id field
+            "id": str(booking.id),
+            "booking_id": str(booking.id),
             "booking_reference": booking.booking_reference,
             "booking_status": booking.booking_status,
             "booked_at": booking.booked_at.isoformat(),
@@ -99,6 +123,7 @@ def get_event_participants(
     return {
         "event": {
             "id": str(event.id),
+            "event_code": event.event_code,
             "name": event.name,
             "event_date": str(event.event_date),
             "event_time": str(event.event_time),
@@ -118,18 +143,15 @@ def export_event_participants(
     current_admin: Admin = Depends(get_current_admin)
 ):
     """Export event participants as CSV."""
-    from app.models.booking import Booking
     from fastapi.responses import StreamingResponse
     import csv
     import io
 
-    # Get event
-    event = db.query(Event).filter(Event.id == event_id).first()
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    # Get event by ID or code
+    event = get_event_by_identifier(db, event_id)
 
     # Get bookings for this event
-    bookings = db.query(Booking).filter(Booking.event_id == event_id).all()
+    bookings = db.query(Booking).filter(Booking.event_id == event.id).all()
 
     # Create CSV in memory
     output = io.StringIO()
@@ -162,16 +184,15 @@ def export_event_participants(
         iter([output.getvalue()]), 
         media_type="text/csv"
     )
-    response.headers["Content-Disposition"] = f"attachment; filename=participants_{event_id}.csv"
+    response.headers["Content-Disposition"] = f"attachment; filename=participants_{event.event_code}.csv"
     return response
 
+
+# ---------------- GET EVENT TIME SLOTS ----------------
 @router.get("/{event_id}/time-slots")
 def get_event_time_slots(event_id: str, db: Session = Depends(get_db)):
     """Get available time slots for an event"""
-    event = db.query(Event).filter(Event.id == event_id).first()
-    
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    event = get_event_by_identifier(db, event_id)
     
     if not event.time_slots:
         # No time slots configured, return single slot based on event_time
@@ -179,7 +200,7 @@ def get_event_time_slots(event_id: str, db: Session = Depends(get_db)):
             "has_time_slots": False,
             "slots": [{
                 "start": str(event.event_time.strftime("%H:%M")),
-                "end": "16:00",  # Default end time
+                "end": "16:00",
                 "slots": event.total_slots,
                 "available": event.available_slots
             }]

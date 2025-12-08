@@ -26,15 +26,15 @@ def create_booking(
 ) -> Booking:
     """Create a new booking with time slot support"""
     
-    # Check if event exists
-    event = db.query(Event).filter(Event.id == event_id).first()
+    # Check if event exists - query by event_code instead of id
+    event = db.query(Event).filter(Event.event_code == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
-    # Check if already booked
+    # Check if already booked - use event.id (the actual UUID)
     existing = db.query(Booking).filter(
         Booking.participant_id == participant_id,
-        Booking.event_id == event_id,
+        Booking.event_id == event.id,
         Booking.booking_status != "cancelled"
     ).first()
     
@@ -83,10 +83,10 @@ def create_booking(
         
         event.available_slots -= 1
     
-    # Create booking
+    # Create booking - use event.id (the actual UUID)
     booking = Booking(
         participant_id=participant_id,
-        event_id=event_id,
+        event_id=event.id,
         booking_reference=generate_booking_reference(),
         booking_status="confirmed",
         time_slot_start=slot_start_time,

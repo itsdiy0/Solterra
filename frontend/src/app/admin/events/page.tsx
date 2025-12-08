@@ -11,6 +11,7 @@ import { Calendar, MapPin, Users, Plus, Edit, Trash2 } from 'lucide-react';
 interface Event {
   id: string;
   name: string;
+  event_code: string;
   event_date: string;
   event_time: string;
   address: string;
@@ -147,6 +148,8 @@ export default function AdminEventsPage() {
                           </span>
                         </div>
 
+                        <p className="text-sm text-gray-500 font-mono mb-3">{event.event_code}</p>
+
                         <div className="space-y-2 text-sm text-gray-600 mb-4">
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
@@ -187,7 +190,7 @@ export default function AdminEventsPage() {
 
                       <div className="ml-6 flex flex-col gap-2">
                         <Button
-                          onClick={() => router.push(`/admin/events/${event.id}`)}
+                          onClick={() => router.push(`/admin/events/${event.event_code}`)}
                           variant="outline"
                           size="sm"
                         >
@@ -195,7 +198,7 @@ export default function AdminEventsPage() {
                           Edit
                         </Button>
                         <Button
-                          onClick={() => router.push(`/admin/events/${event.id}/participants`)}
+                          onClick={() => router.push(`/admin/events/${event.event_code}/participants`)}
                           variant="outline"
                           size="sm"
                         >
@@ -203,7 +206,7 @@ export default function AdminEventsPage() {
                           Participants
                         </Button>
                         <Button
-                          onClick={() => handleDelete(event.id)}
+                          onClick={() => handleDelete(event.event_code)}
                           variant="outline"
                           size="sm"
                           className="text-red-600 hover:bg-red-50"

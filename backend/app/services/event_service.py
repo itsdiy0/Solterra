@@ -7,7 +7,7 @@ import os
 
 from app.models.event import Event, EventStatus
 from app.schemas.event import EventCreateRequest
-
+from app.services.event_code_service import generate_event_code
 
 class EventService:
     """Service layer for event management."""
@@ -43,6 +43,8 @@ class EventService:
         coordinates = None
         if self.google_api_key:
             coordinates = self._validate_address(event_data.address)
+
+        event_code = generate_event_code(self.db, event_data.address, use_sequential=True)
         
         lat = event_data.latitude
         lng = event_data.longitude
@@ -55,6 +57,7 @@ class EventService:
         
         new_event = Event(
             name=event_data.name.strip(),
+            event_code=event_code,
             event_date=event_data.event_date,
             event_time=event_data.event_time,
             address=event_data.address.strip(),
