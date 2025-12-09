@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: rose_postgres_test
+    environment:
+      POSTGRES_USER: rose_user
+      POSTGRES_PASSWORD: rose_password
+      POSTGRES_DB: rose_db
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rose_user -d rose_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: solterra-backend:test
+    container_name: rose_backend_test
+    environment:
+      DATABASE_URL: postgresql://rose_user:rose_password@postgres:5432/rose_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: solterra-frontend:test
+    container_name: rose_frontend_test
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
