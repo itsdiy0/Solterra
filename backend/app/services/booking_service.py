@@ -104,7 +104,7 @@ def create_booking(
         "time": f"{time_slot_start}-{time_slot_end}" if time_slot_start else str(event.event_time),
         "ref": booking.booking_reference
     }
-    send_booking_confirmation_sms(participant_phone, booking_details, mock=True)
+    send_booking_confirmation_sms(participant_phone, booking_details)
     
     return booking
 
@@ -142,6 +142,6 @@ def cancel_booking(db: Session, booking_id: str, participant_phone: str) -> Book
     db.refresh(booking)
     
     # Send cancellation SMS
-    send_booking_cancellation_sms(participant_phone, booking.booking_reference, mock=True)
+    send_booking_cancellation_sms(participant_phone, booking.booking_reference)
     
     return booking

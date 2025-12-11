@@ -8,29 +8,48 @@ services:
       POSTGRES_DB: rose_db
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rose_user -d rose_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  backend:
-    image: solterra-backend:test
-    container_name: rose_backend_test
-    environment:
-      DATABASE_URL: postgresql://rose_user:rose_password@postgres:5432/rose_db
-    ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+  # backend:
+  #   build:  
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: rose_backend_test
+  #   environment:
+  #     DATABASE_URL: postgresql://rose_user:rose_password@postgres:5432/rose_db
+  #     SECRET_KEY: your-secret-key-change-in-production
+  #     TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+  #     TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+  #     TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+  #     CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+  #     CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+  #     CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+  #     GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
 
-  frontend:
-    image: solterra-frontend:test
-    container_name: rose_frontend_test
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
+  # frontend:
+  #   build:  
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: rose_frontend_test
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:8000
+  #     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+  #     NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID: ${NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+
+volumes:
+  postgres_data:

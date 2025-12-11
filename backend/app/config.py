@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str
     TWILIO_AUTH_TOKEN: str
     TWILIO_PHONE_NUMBER: str
-    SMS_MODE:  str
+    SMS_MODE:  str = "mock"  # "mock" or "live"
     # Google Maps
     GOOGLE_MAPS_API_KEY: Optional[str] = None
     

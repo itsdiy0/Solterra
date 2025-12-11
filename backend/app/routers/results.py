@@ -126,7 +126,6 @@ def send_result_sms(
         booking_reference=booking.booking_reference,
         participant_name=participant.name,
         result_url=f"https://rose.org/results/{result.id}",  # Update with actual URL
-        mock=True
     )
     
     # Mark SMS as sent
@@ -240,7 +239,6 @@ def request_result_otp(
     send_otp_sms(
         phone=current_participant.phone_number,
         otp_code=otp_record.otp_code,
-        mock=True
     )
     
     print(f"OTP sent to {current_participant.phone_number}: {otp_record.otp_code}")
@@ -274,7 +272,7 @@ def view_result_with_otp(
     is_valid = verify_otp(
         db=db,
         phone_number=current_participant.phone_number,
-        otp_code=request.otp_code,  # ✅ Use request.otp_code
+        otp_code=request.otp_code,
         purpose="result_access"
     )
     

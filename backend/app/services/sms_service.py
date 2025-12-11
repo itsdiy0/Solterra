@@ -11,7 +11,7 @@ logger.setLevel(logging.INFO)
 
 
 class TwilioSMSService:
-    def __init__(self, mock: bool = True):
+    def __init__(self, mock: bool = False):
         """
         Initialize Twilio SMS client.
         If mock=True, messages won't actually be sent (useful for local testing).
@@ -57,15 +57,16 @@ class TwilioSMSService:
             return None
 
 
-def send_otp_sms(phone: str, otp_code: str, mock: bool = True):
+def send_otp_sms(phone: str, otp_code: str):
     """Send OTP verification code via SMS"""
-    sms_service = TwilioSMSService(mock=mock)
-    message = f"Your verification code is: {otp_code}. It will expire in 10 minutes."
+    is_mock = settings.SMS_MODE == "mock"
+    sms_service = TwilioSMSService(mock=is_mock)
+    message = f"Your ROSE verification code is: {otp_code}. Valid for 10 minutes."
     result = sms_service.send_sms(phone, message)
     return result
 
 
-def send_booking_confirmation_sms(phone: str, booking_details: dict, mock: bool = True):
+def send_booking_confirmation_sms(phone: str, booking_details: dict):
     """
     Send booking confirmation SMS.
     booking_details example:
@@ -76,20 +77,25 @@ def send_booking_confirmation_sms(phone: str, booking_details: dict, mock: bool 
         "ref": "ABC123"
     }
     """
-    sms_service = TwilioSMSService(mock=mock)
+    is_mock = settings.SMS_MODE == "mock"
+    sms_service = TwilioSMSService(mock=is_mock)
     message = (
-        f"Booking confirmed for {booking_details['event_name']} "
-        f"on {booking_details['date']} at {booking_details['time']}.\n"
-        f"Ref: {booking_details['ref']}."
+        f"ROSE Foundation: Booking confirmed!\n\n"
+        f"Event: {booking_details['event_name']}\n"
+        f"Date: {booking_details['date']}\n"
+        f"Time: {booking_details['time']}\n"
+        f"Ref: {booking_details['ref']}\n\n"
+        f"Bring your MyKad and mobile phone."
     )
     return sms_service.send_sms(phone, message)
 
 
-def send_booking_cancellation_sms(phone: str, booking_ref: str, mock: bool = True):
+def send_booking_cancellation_sms(phone: str, booking_ref: str):
     """Send booking cancellation SMS"""
-    sms_service = TwilioSMSService(mock=mock)
+    is_mock = settings.SMS_MODE == "mock"
+    sms_service = TwilioSMSService(mock=is_mock)
     message = (
-        f"Your booking with reference {booking_ref} has been cancelled. "
+        f"ROSE Foundation: Your booking {booking_ref} has been cancelled. "
         "If this wasn't you, please contact support immediately."
     )
     return sms_service.send_sms(phone, message)
@@ -101,13 +107,13 @@ def send_result_notification_sms(
     booking_reference: str,
     participant_name: str,
     result_url: Optional[str] = None,
-    mock: bool = True
 ) -> dict:
     """
     Send test result notification SMS.
     Different templates for Normal vs Abnormal results.
     """
-    sms_service = TwilioSMSService(mock=mock)
+    is_mock = settings.SMS_MODE == "mock"
+    sms_service = TwilioSMSService(mock=is_mock)
     
     if result_category == "Normal":
         message = (
@@ -116,9 +122,8 @@ def send_result_notification_sms(
             f"Result: Normal\n"
             f"Booking Ref: {booking_reference}\n\n"
             f"No further action needed.\n"
-            f"View full results: {result_url or 'Login to view'}\n\n"
-            f"- ROSE Foundation\n"
-            f"Cervical Cancer Screening Program"
+            f"View results: {result_url or 'Login to ROSE portal'}\n\n"
+            f"- ROSE Foundation"
         )
     else:
         message = (
@@ -127,9 +132,8 @@ def send_result_notification_sms(
             f"Result: Abnormal - Follow-up Required\n"
             f"Booking Ref: {booking_reference}\n\n"
             f"IMPORTANT: Please contact ROSE Foundation:\n"
-            f"Phone: +60-XXX-XXXX\n"
-            f"Email: support@rose.org\n\n"
-            f"View full results: {result_url or 'Login to view'}\n\n"
+            f"Phone: +60-XXX-XXXX\n\n"
+            f"View results: {result_url or 'Login to ROSE portal'}\n\n"
             f"- ROSE Foundation"
         )
     

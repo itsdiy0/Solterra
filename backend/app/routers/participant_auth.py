@@ -43,7 +43,6 @@ def register_participant(request: ParticipantRegisterRequest, db: Session = Depe
     send_otp_sms(
         phone=request.phone_number,
         otp_code=otp_record.otp_code,
-        mock=True
     )
     
     print(f"📱 OTP sent to {request.phone_number}: {otp_record.otp_code}")
@@ -119,7 +118,6 @@ def login_participant(request: ParticipantLoginRequest, db: Session = Depends(ge
     send_otp_sms(
         phone=request.phone_number,
         otp_code=otp_record.otp_code,
-        mock=True
     )
     
     print(f"📱 OTP sent to {request.phone_number}: {otp_record.otp_code}")
