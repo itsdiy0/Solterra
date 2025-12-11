@@ -4,6 +4,8 @@ A comprehensive event management platform for ROSE Foundation, a Malaysian NGO p
 
 
 ## Getting Started
+download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/) on your machine.
+
 start by cloning the github repo 
 ```bash
 git clone https://github.com/itsdiy0/Solterra
@@ -52,6 +54,9 @@ npm run dev
 ```
 
 Frontend runs at: `http://localhost:3000`
+Access the app on: `http://localhost:3000/events`
+>Participant authentication screen: `http://localhost:3000/auth/login`
+>Admin authentication screen: `http://localhost:3000/admin/login`
 
 ## Features
 
