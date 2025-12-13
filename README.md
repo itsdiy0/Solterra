@@ -2,6 +2,15 @@
 
 A comprehensive event management platform for ROSE Foundation, a Malaysian NGO providing mobile cervical cancer screening services to B40 communities. The system features SMS-first architecture, participant booking management, admin event coordination, and secure test results delivery with OTP verification.
 
+## Features
+
+- Multi-step event booking with eligibility screening
+- Time slot selection for events
+- SMS notifications (OTP, confirmations, results)
+- Admin dashboard with analytics
+- Test results upload with Cloudinary
+- Secure result viewing with OTP verification
+- QR code check-in system
 
 ## Getting Started
 download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/) on your machine.   
@@ -54,8 +63,13 @@ cp .env.example .env
 # Start development server
 npm run dev
 ```
-## Enviornment Variables 
 
+Frontend runs at: `http://localhost:3000`
+>Access the app on: `http://localhost:3000/events`   
+>Participant authentication screen: `http://localhost:3000/auth/login`   
+>Admin authentication screen: `http://localhost:3000/admin/login`   
+
+## Enviornment Variables 
 Don't forget to include your google map API key in frontend .env file : 
 ```bash
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
@@ -77,17 +91,3 @@ SMS mode is mock by default, however you can change it to live to use Twilio as 
 SMS_MODE=mock #live
 ```
 
-Frontend runs at: `http://localhost:3000`
->Access the app on: `http://localhost:3000/events`   
->Participant authentication screen: `http://localhost:3000/auth/login`   
->Admin authentication screen: `http://localhost:3000/admin/login`   
-
-## Features
-
-- Multi-step event booking with eligibility screening
-- Time slot selection for events
-- SMS notifications (OTP, confirmations, results)
-- Admin dashboard with analytics
-- Test results upload with Cloudinary
-- Secure result viewing with OTP verification
-- QR code check-in system
