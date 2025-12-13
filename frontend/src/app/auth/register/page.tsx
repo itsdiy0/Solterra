@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Footer from '@/components/layout/Footer';
 
 export default function ParticipantRegisterPage() {
   const router = useRouter();
@@ -114,8 +115,8 @@ export default function ParticipantRegisterPage() {
 
   return (
     <GuestOnly>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50 to-white p-4">
-        <div className="absolute top-0 left-0 right-0 h-32 bg-emerald-500" />
+            <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 to-white">
+            <div className="flex-1 flex items-center justify-center p-4">
 
         <Card className="w-full max-w-md relative z-10 shadow-xl">
           <CardHeader className="space-y-4 text-center">
@@ -270,7 +271,8 @@ export default function ParticipantRegisterPage() {
           </CardContent>
         </Card>
 
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-emerald-500" />
+        </div>
+        <Footer />
       </div>
     </GuestOnly>
   );
