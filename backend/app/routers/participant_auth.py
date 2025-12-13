@@ -13,6 +13,7 @@ from app.utils.security import create_access_token
 from app.database import get_db
 from app.services.otp_service import create_otp_record, verify_otp, invalidate_previous_otps
 from app.services.sms_service import send_otp_sms
+from app.utils.phone_formatter import format_phone_number
 
 router = APIRouter(prefix="/participant/auth", tags=["Participant Authentication"])
 
@@ -20,9 +21,10 @@ router = APIRouter(prefix="/participant/auth", tags=["Participant Authentication
 @router.post("/register", response_model=OTPResponse)
 def register_participant(request: ParticipantRegisterRequest, db: Session = Depends(get_db)):
     """Step 1 of registration: Validate data and send OTP"""
-    
+    formatted_phone = format_phone_number(request.phone_number, default_country="MY")
+
     existing = db.query(Participant).filter(
-        (Participant.phone_number == request.phone_number) |
+        (Participant.phone_number == formatted_phone) |
         (Participant.mykad_id == request.mykad_id)
     ).first()
     
@@ -32,24 +34,24 @@ def register_participant(request: ParticipantRegisterRequest, db: Session = Depe
             detail="Phone number or MyKad already registered"
         )
     
-    invalidate_previous_otps(db, request.phone_number, "registration")
+    invalidate_previous_otps(db, formatted_phone, "registration")
     
     otp_record = create_otp_record(
         db=db,
-        phone_number=request.phone_number,
+        phone_number=formatted_phone,
         purpose="registration"
     )
     
     send_otp_sms(
-        phone=request.phone_number,
+        phone=formatted_phone, 
         otp_code=otp_record.otp_code,
     )
     
-    print(f"📱 OTP sent to {request.phone_number}: {otp_record.otp_code}")
+    print(f"📱 OTP sent to {formatted_phone}: {otp_record.otp_code}")
     
     return OTPResponse(
-        message=f"OTP sent to {request.phone_number}. Valid for 10 minutes.",
-        phone_number=request.phone_number
+        message=f"OTP sent to {formatted_phone}. Valid for 10 minutes.",
+        phone_number=formatted_phone  
     )
 
 
@@ -57,9 +59,12 @@ def register_participant(request: ParticipantRegisterRequest, db: Session = Depe
 def verify_registration(request: VerifyRegistrationRequest, db: Session = Depends(get_db)):
     """Step 2 of registration: Verify OTP and create account"""
     
+    
+    formatted_phone = format_phone_number(request.phone_number, default_country="MY")
+    
     is_valid = verify_otp(
         db=db,
-        phone_number=request.phone_number,
+        phone_number=formatted_phone, 
         otp_code=request.otp_code,
         purpose="registration"
     )
@@ -69,7 +74,7 @@ def verify_registration(request: VerifyRegistrationRequest, db: Session = Depend
     
     participant = Participant(
         name=request.name,
-        phone_number=request.phone_number,
+        phone_number=formatted_phone, 
         mykad_id=request.mykad_id,
         phone_verified=True
     )
@@ -95,9 +100,12 @@ def verify_registration(request: VerifyRegistrationRequest, db: Session = Depend
 @router.post("/login", response_model=OTPResponse)
 def login_participant(request: ParticipantLoginRequest, db: Session = Depends(get_db)):
     """Step 1 of login: Verify phone + MyKad pairing and send OTP"""
+    formatted_phone = format_phone_number(request.phone_number, default_country="MY")
+    
+    print(f"Input: {request.phone_number} → Formatted: {formatted_phone}")
     
     participant = db.query(Participant).filter(
-        Participant.phone_number == request.phone_number,
+        Participant.phone_number == formatted_phone,
         Participant.mykad_id == request.mykad_id
     ).first()
 
@@ -107,24 +115,24 @@ def login_participant(request: ParticipantLoginRequest, db: Session = Depends(ge
             detail="Invalid phone number or MyKad"
         )
     
-    invalidate_previous_otps(db, request.phone_number, "login")
+    invalidate_previous_otps(db, formatted_phone, "login")
     
     otp_record = create_otp_record(
         db=db,
-        phone_number=request.phone_number,
+        phone_number=formatted_phone,  
         purpose="login"
     )
     
     send_otp_sms(
-        phone=request.phone_number,
+        phone=formatted_phone,  
         otp_code=otp_record.otp_code,
     )
     
-    print(f"📱 OTP sent to {request.phone_number}: {otp_record.otp_code}")
+    print(f"📱 OTP sent to {formatted_phone}: {otp_record.otp_code}")
     
     return OTPResponse(
-        message=f"OTP sent to {request.phone_number}. Valid for 10 minutes.",
-        phone_number=request.phone_number
+        message=f"OTP sent to {formatted_phone}. Valid for 10 minutes.",
+        phone_number=formatted_phone  # ✅ Return formatted
     )
 
 
@@ -132,9 +140,12 @@ def login_participant(request: ParticipantLoginRequest, db: Session = Depends(ge
 def verify_login(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     """Step 2 of login: Verify OTP and return JWT token"""
     
+    
+    formatted_phone = format_phone_number(request.phone_number, default_country="MY")
+    
     is_valid = verify_otp(
         db=db,
-        phone_number=request.phone_number,
+        phone_number=formatted_phone,  
         otp_code=request.otp_code,
         purpose="login"
     )
@@ -143,7 +154,7 @@ def verify_login(request: VerifyOTPRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
     
     participant = db.query(Participant).filter(
-        Participant.phone_number == request.phone_number
+        Participant.phone_number == formatted_phone  
     ).first()
     
     if not participant:
