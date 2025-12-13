@@ -20,7 +20,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 flex flex-col">
       {/* Main Content */}
-      <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+      <div className="flex-1 mt-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
 
           {/* Left Column - Title & Auth Links */}
@@ -103,8 +103,8 @@ export default function LandingPage() {
                   <h2 className="text-2xl font-bold text-gray-900">University Project</h2>
                 </div>
                 <p className="text-gray-700 mb-4">
-                  Developed for <strong>KV6014 Software Engineering</strong> module at{' '}
-                  <strong>Northumbria University</strong> as a real-world group project addressing
+                  Developed for <strong>KV6014 Group project  module</strong> at {' '}
+                  <strong><a href='https://www.northumbria.ac.uk/' target='_blank'>Northumbria University</a></strong> as a real-world group project addressing
                   genuine challenges in healthcare accessibility.
                 </p>
 
