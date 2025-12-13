@@ -37,7 +37,7 @@ def get_event_by_identifier(db: Session, identifier: str) -> Event:
 
 
 # ---------------- CREATE EVENT ----------------
-@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
     event_data: EventCreateRequest,
     db: Session = Depends(get_db),
@@ -49,7 +49,7 @@ def create_event(
 
 
 # ---------------- LIST EVENTS ----------------
-@router.get("/", response_model=list[EventResponse])
+@router.get("", response_model=list[EventResponse])
 def list_events(db: Session = Depends(get_db), published_only: bool = True):
     """List all published events (or all if `published_only=False`)."""
     service = EventService(db)

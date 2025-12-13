@@ -9,13 +9,17 @@ from app.routers import dashboard
 app = FastAPI(
     title="ROSE Event Management API",
     description="API for ROSE Foundation mobile health screening events",
-    version="1.0.0"
+    version="1.0.0",
+    redirect_slashes=False
 )
 
 # CORS middleware (allow frontend to access backend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","https://solterra.diy0.dev"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://solterra.diy0.dev"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
