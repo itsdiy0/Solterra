@@ -10,12 +10,14 @@ start by cloning the github repo
 ```bash
 git clone https://github.com/itsdiy0/Solterra
 ```
+Running postgres as DB using docker compose 
+```bash
+docker-compose up -d 
+```
+
 ### Backend Setup
 ```bash
 cd backend
-
-# Run Postgres
-docker-compose up -d 
 
 # Initialise virtual enviornment
 virtualenv venv
@@ -51,6 +53,28 @@ cp .env.example .env
 
 # Start development server
 npm run dev
+```
+## Enviornment Variables 
+
+Don't forget to include your google map API key in frontend .env file : 
+```bash
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID=
+```
+and your Twilio and Cloudinary credintials : 
+```bash
+# Twilio
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+SMS mode is mock by default, however you can change it to live to use Twilio as your SMS service :
+```bash
+SMS_MODE=mock #live
 ```
 
 Frontend runs at: `http://localhost:3000`
