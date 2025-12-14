@@ -95,15 +95,20 @@ export default function AdminEventsPage() {
     }
   };
 
-  const isEventPast = (eventDate: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const isEventPast = (eventDate: string, eventTime?: string) => {
+    const now = new Date();
     const eventDateTime = new Date(eventDate);
-    eventDateTime.setHours(0, 0, 0, 0);
-    return eventDateTime < today;
+
+    if (eventTime) {
+      const [hours, minutes] = eventTime.split(':').map(Number);
+      eventDateTime.setHours(hours, minutes, 0, 0);
+    } else {
+      eventDateTime.setHours(23, 59, 59, 999);
+    }
+
+    return eventDateTime < now;
   };
 
-  // Sort and filter events
   const getSortedAndFilteredEvents = () => {
     let filtered = events.filter((event) => {
       const matchesSearch =
@@ -111,7 +116,7 @@ export default function AdminEventsPage() {
         event.event_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         event.address.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const isPast = isEventPast(event.event_date);
+      const isPast = isEventPast(event.event_date, event.event_time);
 
       if (activeFilter === 'published') {
         return matchesSearch && event.status === 'published';
@@ -122,19 +127,16 @@ export default function AdminEventsPage() {
       } else if (activeFilter === 'past') {
         return matchesSearch && isPast;
       }
-      return matchesSearch; // 'all'
+      return matchesSearch;
     });
 
-    // Sort: upcoming first, then by date
     return filtered.sort((a, b) => {
-      const aIsPast = isEventPast(a.event_date);
-      const bIsPast = isEventPast(b.event_date);
+      const aIsPast = isEventPast(a.event_date, a.event_time);
+      const bIsPast = isEventPast(b.event_date, b.event_time);
 
-      // Past events go last
       if (aIsPast && !bIsPast) return 1;
       if (!aIsPast && bIsPast) return -1;
 
-      // Sort by date (newest first for upcoming, oldest first for past)
       return aIsPast
         ? new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
         : new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
@@ -143,22 +145,19 @@ export default function AdminEventsPage() {
 
   const sortedAndFilteredEvents = getSortedAndFilteredEvents();
 
-  // Pagination
   const totalPages = Math.ceil(sortedAndFilteredEvents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedEvents = sortedAndFilteredEvents.slice(startIndex, endIndex);
 
-  // Reset to page 1 when filter or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [activeFilter, searchTerm]);
 
-  // Count badges
   const publishedCount = events.filter(e => e.status === 'published').length;
   const draftCount = events.filter(e => e.status === 'draft').length;
-  const upcomingCount = events.filter(e => !isEventPast(e.event_date)).length;
-  const pastCount = events.filter(e => isEventPast(e.event_date)).length;
+  const upcomingCount = events.filter(e => !isEventPast(e.event_date, e.event_time)).length;
+  const pastCount = events.filter(e => isEventPast(e.event_date, e.event_time)).length;
 
   if (loading) {
     return (
@@ -205,7 +204,6 @@ export default function AdminEventsPage() {
           />
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <Button
             onClick={() => setActiveFilter('all')}
@@ -259,7 +257,6 @@ export default function AdminEventsPage() {
           </Button>
         </div>
 
-        {/* Events Grid */}
         {events.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
@@ -285,12 +282,12 @@ export default function AdminEventsPage() {
               {paginatedEvents.map((event) => {
                 const bookedSlots = event.total_slots - event.available_slots;
                 const bookedPercentage = (bookedSlots / event.total_slots) * 100;
-                const isPast = isEventPast(event.event_date);
+                const isPast = isEventPast(event.event_date, event.event_time);
 
                 return (
                   <Card
                     key={event.id}
-                    className={`hover:shadow-lg transition-shadow ${isPast ? 'opacity-60' : ''}`}
+                    className="hover:shadow-lg transition-shadow"
                   >
                     <CardContent>
                       <div className="flex flex-col">
@@ -334,7 +331,6 @@ export default function AdminEventsPage() {
                             </div>
                           </div>
 
-                          {/* Capacity Bar */}
                           <div className="mb-3">
                             <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                               <div
@@ -354,15 +350,17 @@ export default function AdminEventsPage() {
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t">
-                          <Button
-                            onClick={() => router.push(`/admin/events/${event.event_code}`)}
-                            variant="outline"
-                            size="sm"
-                            className="w-full sm:flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-                          >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
+                          {!isPast && (
+                            <Button
+                              onClick={() => router.push(`/admin/events/${event.event_code}`)}
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:flex-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                          )}
                           <Button
                             onClick={() => router.push(`/admin/events/${event.event_code}/participants`)}
                             variant="outline"
@@ -389,7 +387,6 @@ export default function AdminEventsPage() {
               })}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
                 <Button
