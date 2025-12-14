@@ -84,10 +84,13 @@ class EventService:
         return new_event
 
     # ---------------- LIST EVENTS ----------------
-    def list_events(self, published_only: bool = True) -> list[Event]:
+    def list_events(self, published_only: bool = True, created_by: str | None = None) -> list[Event]:
+        """List events. Optionally filter by `created_by` (admin id)."""
         query = self.db.query(Event)
         if published_only:
             query = query.filter(Event.status == EventStatus.published)
+        if created_by:
+            query = query.filter(Event.created_by == created_by)
         return query.order_by(Event.event_date.asc(), Event.event_time.asc()).all()
 
     # ---------------- GET EVENT BY ID ----------------

@@ -6,6 +6,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
   Calendar,
@@ -40,19 +42,26 @@ export default function AdminEventsPage() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [isMyEvents, setIsMyEvents] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [isMyEvents]);
 
   const fetchEvents = async () => {
+    setLoading(true);
+    setError('');
     const token = localStorage.getItem('access_token');
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events?published_only=false`, {
+      const endpoint = isMyEvents
+        ? `${process.env.NEXT_PUBLIC_API_URL}/events/me?published_only=false`
+        : `${process.env.NEXT_PUBLIC_API_URL}/events?published_only=false`;
+
+      const res = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -257,6 +266,19 @@ export default function AdminEventsPage() {
               {pastCount}
             </span>
           </Button>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-transparent hover:border-gray-200">
+            <Checkbox
+              checked={isMyEvents}
+              onCheckedChange={(checked) => {
+                setIsMyEvents(Boolean(checked));
+                setActiveFilter('all');
+              }}
+            />
+            <Label className="select-none">Only My Events</Label>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+              {isMyEvents ? events.length : ''}
+            </span>
+          </div>
         </div>
 
         {/* Events Grid */}

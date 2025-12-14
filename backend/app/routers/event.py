@@ -56,6 +56,18 @@ def list_events(db: Session = Depends(get_db), published_only: bool = True):
     return service.list_events(published_only=published_only)
 
 
+# ---------------- LIST EVENTS FOR CURRENT ADMIN ----------------
+@router.get("/me", response_model=list[EventResponse])
+def list_my_events(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin),
+    published_only: bool = True
+):
+    """List events created by the current admin."""
+    service = EventService(db)
+    return service.list_events(published_only=published_only, created_by=current_admin.id)
+
+
 # ---------------- GET EVENT BY ID OR CODE ----------------
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event_by_id(event_id: str, db: Session = Depends(get_db)):
