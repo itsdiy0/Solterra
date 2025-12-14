@@ -21,7 +21,7 @@ download and install [Docker Desktop](https://www.docker.com/products/docker-des
 
 start by cloning the github repo 
 ```bash
-git clone https://github.com/itsdiy0/Solterra
+git clone https://github.com/itsdiy0/Solterra && cd Solterra
 ```
 > Docker app must be running in the background in order to execute this command.   
 
