@@ -23,8 +23,9 @@ start by cloning the github repo
 ```bash
 git clone https://github.com/itsdiy0/Solterra
 ```
-> Docker app must be running in the background in order to execute this command.  
-Running postgres as DB using docker compose 
+> Docker app must be running in the background in order to execute this command.   
+
+Running postgres as DB using docker compose
 ```bash
 docker-compose up -d 
 ```
