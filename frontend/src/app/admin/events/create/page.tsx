@@ -63,7 +63,7 @@ export default function CreateEventPage() {
     };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
