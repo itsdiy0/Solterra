@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     
     # App
     DEBUG: bool = True
+
+    # Google Maps
+    GOOGLE_MAPS_API_KEY: Optional[str] = None
     
     class Config:
         env_file = ".env"
