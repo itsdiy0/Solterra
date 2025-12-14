@@ -19,19 +19,73 @@ def seed_all():
         db.query(admin.Admin).delete()
         db.commit()
 
-        # Admins
+        # Use Faker to generate realistic data (default locale)
+        fake = Faker()
+
+        # Malaysian cities with sample coordinates and venue names
+        MALAYSIA_CITIES = [
+            {"city": "Kuala Lumpur", "lat": 3.1390, "lon": 101.6869, "venue": "Kompleks Sukan Kuala Lumpur"},
+            {"city": "Penang", "lat": 5.4164, "lon": 100.3327, "venue": "Dewan Komuniti Georgetown"},
+            {"city": "Johor Bahru", "lat": 1.4927, "lon": 103.7414, "venue": "Pusat Kesihatan JB"},
+            {"city": "Kota Kinabalu", "lat": 5.9804, "lon": 116.0735, "venue": "Kompleks Sukan KK"},
+            {"city": "Kuching", "lat": 1.5533, "lon": 110.3592, "venue": "Dewan Masyarakat Kuching"},
+            {"city": "Ipoh", "lat": 4.5975, "lon": 101.0901, "venue": "Pusat Komuniti Ipoh"},
+            {"city": "Seremban", "lat": 2.7299, "lon": 101.9388, "venue": "Dewan Seremban"},
+            {"city": "Melaka", "lat": 2.1896, "lon": 102.2501, "venue": "Kompleks Sukan Melaka"},
+            {"city": "Alor Setar", "lat": 6.1190, "lon": 100.3686, "venue": "Dewan Masyarakat Alor Setar"},
+            {"city": "Taiping", "lat": 4.8546, "lon": 100.7384, "venue": "Pusat Kesihatan Taiping"}
+        ]
+
+        PHONE_PREFIXES = ["011", "012", "013", "014", "016", "017", "018", "019"]
+
+        EVENT_NAME_TEMPLATES = [
+            "Program Saringan Kesihatan Komuniti - {}",
+            "Derma Darah - {}",
+            "Mobile Klinik - {}",
+            "Health Screening & Vaccination - {}",
+            "Kempen Kesihatan Jantung - {}",
+            "Saringan Diabetes Percuma - {}",
+            "Pemeriksaan Kesihatan Percuma - {}"
+        ]
+        # Malaysian name pools for more realistic participant names (female-only)
+        MALAY_GIVEN = ["Siti", "Nur", "Aisyah", "Amina", "Farah", "Zainab", "Rozita", "Hani", "Lina", "Nor"]
+        MALAY_FAMILY = ["Hassan", "Abdullah", "Ismail", "Rahman", "Aziz", "Othman", "Salleh", "Harun", "Yusuf", "Kamar"]
+        CHINESE_SURNAMES = ["Lim", "Tan", "Lee", "Chan", "Wong", "Ng", "Lau", "Tay", "Goh", "Chong"]
+        CHINESE_GIVEN = ["Mei", "Yun", "Li", "Lin", "Xiu", "Hui", "Jing", "Fang", "Yan", "Lian"]
+        INDIAN_FIRST = ["Priya", "Aishwarya", "Lakshmi", "Kavita", "Anjali", "Deepa", "Meena", "Nisha", "Sangeeta", "Revathi"]
+        INDIAN_LAST = ["Subramaniam", "Nair", "Singh", "Raj", "Sharma", "Pillai", "Iyer", "Reddy", "Kumar", "Nadar"]
+
+        def random_malaysian_name():
+            r = random.random()
+            # ~45% Malay, ~35% Chinese, ~20% Indian
+            if r < 0.45:
+                given = random.choice(MALAY_GIVEN)
+                family = random.choice(MALAY_FAMILY)
+                # female participants should use 'binti'
+                return f"{given} binti {family}"
+            elif r < 0.80:
+                surname = random.choice(CHINESE_SURNAMES)
+                given = random.choice(CHINESE_GIVEN)
+                return f"{surname} {given}"
+            else:
+                first = random.choice(INDIAN_FIRST)
+                last = random.choice(INDIAN_LAST)
+                if random.random() < 0.25:
+                    return f"{first[0]}. {last}"
+                return f"{first} {last}"
+        # Admins (Malaysia-themed)
         admin1 = admin.Admin(
             id=uuid.uuid4(),
-            name="Alice Admin",
-            email="alice@example.com",
+            name="Dr. Nor Aishah",
+            email="nor.aishah@solterra.my",
             password_hash="hash1",
             role="admin",
             email_verified=True
         )
         admin2 = admin.Admin(
             id=uuid.uuid4(),
-            name="Bob SuperAdmin",
-            email="bob@example.com",
+            name="Encik Ahmad",
+            email="ahmad@solterra.my",
             password_hash="hash2",
             role="admin",
             email_verified=False
@@ -40,7 +94,7 @@ def seed_all():
         test_admin = admin.Admin(
             id=uuid.uuid4(),
             name="Test Admin",
-            email="testadmin@example.com",
+            email="testadmin@solterra.my",
             password_hash="$2b$12$kK8fowOslsTbSn9DGoBFxehSTIE1xPwEMdehhIqcP0Fc2d3.h1sfq",  # password: testpassword
             role="admin",
             email_verified=True
@@ -49,52 +103,52 @@ def seed_all():
         db.commit()
 
 
-        # Events (including from test admin)
+        # Events (including from test admin) - Malaysia examples
         event1 = event.Event(
             id=uuid.uuid4(),
-            event_code="EVT001",
-            name="Health Fair",
+            event_code="MYEVT001",
+            name="Program Saringan Kesihatan Komuniti - Kuala Lumpur",
             event_date=date.today() + timedelta(days=7),
             event_time=time(9, 0),
-            address="123 Main St",
-            latitude=3.139,
+            address="Kompleks Sukan Kuala Lumpur, Kuala Lumpur",
+            latitude=3.1390,
             longitude=101.6869,
-            time_slots=[{"start": "09:00", "end": "10:00", "slots": 20, "available": 20}],
-            total_slots=20,
-            available_slots=20,
-            additional_info="Annual event",
+            time_slots=[{"start": "09:00", "end": "10:00", "slots": 30, "available": 30}],
+            total_slots=30,
+            available_slots=30,
+            additional_info="Saringan kesihatan percuma untuk komuniti setempat",
             status="published",
             created_by=admin1.id
         )
         event2 = event.Event(
             id=uuid.uuid4(),
-            event_code="EVT002",
-            name="Blood Drive",
+            event_code="MYEVT002",
+            name="Derma Darah - Penang Rotary Club",
             event_date=date.today() + timedelta(days=14),
             event_time=time(10, 0),
-            address="456 Side St",
-            latitude=3.150,
-            longitude=101.7000,
+            address="Dewan Komuniti Georgetown, Penang",
+            latitude=5.4164,
+            longitude=100.3327,
             time_slots=None,
-            total_slots=50,
-            available_slots=50,
-            additional_info=None,
+            total_slots=100,
+            available_slots=100,
+            additional_info="Kerjasama dengan Bank Darah Negeri",
             status="draft",
             created_by=admin2.id
         )
         event3 = event.Event(
             id=uuid.uuid4(),
-            event_code="EVT003",
-            name="Test Admin Event",
+            event_code="MYEVT003",
+            name="Mobile Klinik - Johor Bahru",
             event_date=date.today() + timedelta(days=10),
             event_time=time(11, 0),
-            address="789 Test Ave",
-            latitude=3.160,
-            longitude=101.7100,
-            time_slots=[{"start": "11:00", "end": "12:00", "slots": 10, "available": 10}],
-            total_slots=10,
-            available_slots=10,
-            additional_info="Created by test admin",
+            address="Pusat Kesihatan JB, Johor Bahru",
+            latitude=1.4927,
+            longitude=103.7414,
+            time_slots=[{"start": "11:00", "end": "12:00", "slots": 20, "available": 20}],
+            total_slots=20,
+            available_slots=20,
+            additional_info="Perkhidmatan klinik bergerak untuk bandar JB",
             status="published",
             created_by=test_admin.id
         )
@@ -104,8 +158,7 @@ def seed_all():
 
 
 
-        # Use Faker to generate more admins/events/participants and bookings
-        fake = Faker()
+        # Continue using `fake` (already configured for Malaysia locales)
 
         NUM_ADMINS = 10
         NUM_EVENTS = 100
@@ -129,12 +182,16 @@ def seed_all():
         # All admins for assignment
         admins = [admin1, admin2, test_admin] + additional_admins
 
-        # Create additional events up to NUM_EVENTS
-        all_events = [event1, event2, event3]
+        # Create additional events up to NUM_EVENTS using Malaysian cities and templates
+        # Start with the 3 events already created above
+        all_events = [
+            event1,
+            event2,
+            event3
+        ]
         for i in range(4, NUM_EVENTS + 1):
             has_slots = (i % 3 != 0)
             if has_slots:
-                # create 1-3 time slots totaling total_slots
                 slot_count = fake.random_int(min=1, max=3)
                 slots = []
                 total = 0
@@ -142,23 +199,26 @@ def seed_all():
                 for s in range(slot_count):
                     st = f"{start_hour + s:02d}:00"
                     et = f"{start_hour + s + 1:02d}:00"
-                    slot_size = fake.random_int(min=5, max=30)
+                    slot_size = fake.random_int(min=5, max=40)
                     total += slot_size
                     slots.append({"start": st, "end": et, "slots": slot_size, "available": slot_size})
                 total_slots = total
             else:
                 slots = None
-                total_slots = fake.random_int(min=20, max=100)
+                total_slots = fake.random_int(min=20, max=150)
+
+            city = random.choice(MALAYSIA_CITIES)
+            name = random.choice(EVENT_NAME_TEMPLATES).format(city["city"])
 
             ev = event.Event(
                 id=uuid.uuid4(),
-                event_code=f"EVT{i:03d}",
-                name=fake.sentence(nb_words=3),
+                event_code=f"MYEVT{i:03d}",
+                name=name,
                 event_date=date.today() + timedelta(days=fake.random_int(min=1, max=60)),
                 event_time=time(fake.random_int(min=8, max=16), 0),
-                address=fake.address(),
-                latitude=round(fake.latitude(), 6),
-                longitude=round(fake.longitude(), 6),
+                address=f"{city['venue']}, {city['city']}",
+                latitude=round(city["lat"] + random.uniform(-0.02, 0.02), 6),
+                longitude=round(city["lon"] + random.uniform(-0.02, 0.02), 6),
                 time_slots=slots,
                 total_slots=total_slots,
                 available_slots=total_slots,
@@ -172,21 +232,22 @@ def seed_all():
 
         # Create participants up to NUM_PARTICIPANTS (keep existing ones)
         participants = []
-        # Add a test participant with known credentials
+        # Add a test participant with known credentials (female Malaysian name)
         test_participant = participant.Participant(
             id=uuid.uuid4(),
-            name="Test User",
-            phone_number="0111111111",
+            name="Siti Aisyah binti Abdullah",
+            phone_number="01111111111",
             mykad_id="900101099999",
             phone_verified=True
         )
         participants.append(test_participant)
         current_count = len(participants)
         for i in range(current_count + 1, NUM_PARTICIPANTS + 1):
+            prefix = random.choice(PHONE_PREFIXES)
             p = participant.Participant(
                 id=uuid.uuid4(),
-                name=fake.name(),
-                phone_number=f"01{fake.random_number(digits=8, fix_len=True)}",
+                name=random_malaysian_name(),
+                phone_number=f"{prefix}{fake.random_number(digits=8, fix_len=True)}",
                 mykad_id=str(fake.random_number(digits=12, fix_len=True)),
                 phone_verified=fake.boolean(chance_of_getting_true=50)
             )
