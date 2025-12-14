@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Footer from '@/components/layout/Footer';
+import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -58,11 +59,13 @@ export default function AdminLoginPage() {
           <Card className="w-full max-w-md relative z-10 shadow-xl">
             <CardHeader className="space-y-4 text-center">
               <div className="mx-auto">
-                <img
-                  src="/images/ROSE_LOGO.svg"
-                  alt="ROSE Foundation Logo"
-                  className="w-full h-full object-contain"
-                />
+                <Link href="/" className="mx-auto block hover:opacity-80 transition-opacity">
+                  <img
+                    src="/images/ROSE_LOGO.svg"
+                    alt="ROSE Foundation Logo"
+                    className="w-full h-full object-contain"
+                  />
+                </Link>
               </div>
 
               <div>
