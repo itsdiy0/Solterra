@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 from uuid import UUID
-
+from app.config import settings
 from app.database import get_db
 from app.models.admin import Admin
 from app.models.participant import Participant
@@ -119,13 +119,16 @@ def send_result_sms(
     booking = result.booking
     participant = booking.participant
     
+    
+    result_url = f"{settings.FRONTEND_URL}/results/{result.id}"
+
     # Send SMS notification
     send_result_notification_sms(
         phone=participant.phone_number,
         result_category=result.result_category,
         booking_reference=booking.booking_reference,
         participant_name=participant.name,
-        result_url=f"https://rose.org/results/{result.id}",  # Update with actual URL
+        result_url=result_url  
     )
     
     # Mark SMS as sent
