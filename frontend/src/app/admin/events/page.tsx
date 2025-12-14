@@ -194,7 +194,7 @@ export default function AdminEventsPage() {
         </div>
 
         <div className="mb-6 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
           <Input
             type="text"
             placeholder="Search by name, code, or location..."
@@ -204,54 +204,54 @@ export default function AdminEventsPage() {
           />
         </div>
 
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           <Button
             onClick={() => setActiveFilter('all')}
             variant={activeFilter === 'all' ? 'default' : 'outline'}
-            className={activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            className={`w-full ${activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
           >
-            All Events
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+            <span className="truncate">All Events</span>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
               {events.length}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('published')}
             variant={activeFilter === 'published' ? 'default' : 'outline'}
-            className={activeFilter === 'published' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            className={`w-full ${activeFilter === 'published' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
           >
-            Published
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+            <span className="truncate">Published</span>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
               {publishedCount}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('draft')}
             variant={activeFilter === 'draft' ? 'default' : 'outline'}
-            className={activeFilter === 'draft' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            className={`w-full ${activeFilter === 'draft' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
           >
-            Draft
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+            <span className="truncate">Draft</span>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
               {draftCount}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('upcoming')}
             variant={activeFilter === 'upcoming' ? 'default' : 'outline'}
-            className={activeFilter === 'upcoming' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            className={`w-full ${activeFilter === 'upcoming' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
           >
-            Upcoming
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+            <span className="truncate">Upcoming</span>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
               {upcomingCount}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('past')}
             variant={activeFilter === 'past' ? 'default' : 'outline'}
-            className={activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            className={`w-full ${activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
           >
-            Past Events
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs">
+            <span className="truncate">Past Events</span>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
               {pastCount}
             </span>
           </Button>
@@ -289,13 +289,13 @@ export default function AdminEventsPage() {
                     key={event.id}
                     className="hover:shadow-lg transition-shadow"
                   >
-                    <CardContent>
+                    <CardContent className="p-4">
                       <div className="flex flex-col">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-semibold flex-1">{event.name}</h3>
+                            <h3 className="text-xl font-semibold flex-1 break-words">{event.name}</h3>
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${event.status === 'published'
+                              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${event.status === 'published'
                                   ? 'bg-green-100 text-green-700'
                                   : 'bg-gray-100 text-gray-700'
                                 }`}
@@ -303,28 +303,28 @@ export default function AdminEventsPage() {
                               {event.status}
                             </span>
                             {isPast && (
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 whitespace-nowrap flex-shrink-0">
                                 Past
                               </span>
                             )}
                           </div>
 
-                          <p className="text-sm text-gray-500 font-mono mb-3">{event.event_code}</p>
+                          <p className="text-sm text-gray-500 font-mono mb-3 break-all">{event.event_code}</p>
 
                           <div className="space-y-2 text-sm text-gray-600 mb-4">
                             <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-emerald-600" />
-                              <span>
+                              <Calendar className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                              <span className="break-words">
                                 {new Date(event.event_date).toLocaleDateString()} at{' '}
                                 {event.event_time.slice(0, 5)}
                               </span>
                             </div>
                             <div className="flex items-start gap-2">
                               <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                              <span>{event.address}</span>
+                              <span className="break-words">{event.address}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-emerald-600" />
+                              <Users className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                               <span>
                                 {bookedSlots} / {event.total_slots} slots booked
                               </span>
@@ -388,7 +388,7 @@ export default function AdminEventsPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-2 flex-wrap">
                 <Button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
@@ -398,7 +398,7 @@ export default function AdminEventsPage() {
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap justify-center">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <Button
                       key={page}
