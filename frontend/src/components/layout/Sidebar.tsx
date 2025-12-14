@@ -26,7 +26,6 @@ export default function Sidebar() {
     { icon: ClipboardList, label: 'Events', path: '/admin/events' },
     { icon: Package, label: 'Results', path: '/admin/results' },
     { icon: BookOpen, label: 'Bookings', path: '/admin/bookings' },
-    { icon: Calendar, label: 'Calendar', path: '/admin/calendar' }, 
   ];
 
   const participantNavItems = [
