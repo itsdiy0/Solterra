@@ -33,7 +33,7 @@ def seed_all():
             name="Bob SuperAdmin",
             email="bob@example.com",
             password_hash="hash2",
-            role="superadmin",
+            role="admin",
             email_verified=False
         )
         # Add a test admin with known credentials
