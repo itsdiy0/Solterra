@@ -221,10 +221,10 @@ export default function ViewResultPage() {
             // Single Card Result Display
             <Card>
               <CardContent className="p-6">
-                <div className="grid grid-cols-12 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   
                   {/* Left: Event & Result Info */}
-                  <div className="col-span-5 space-y-4">
+                  <div className="md:col-span-5 space-y-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Screening Event</p>
                       <h2 className="text-xl font-bold text-gray-900 mb-1">{result.event_name}</h2>
@@ -258,7 +258,7 @@ export default function ViewResultPage() {
                   </div>
 
                   {/* Right: Next Steps & Download */}
-                  <div className="col-span-7 space-y-4">
+                  <div className="md:col-span-7 space-y-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-3">What's Next?</p>
                       
