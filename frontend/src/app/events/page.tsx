@@ -125,19 +125,24 @@ export default function EventsPage() {
     return (current / total) * 100;
   };
 
-  const isEventPast = (eventDate: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const isEventPast = (eventDate: string, eventTime?: string) => {
+    const now = new Date();
     const eventDateTime = new Date(eventDate);
-    eventDateTime.setHours(0, 0, 0, 0);
-    return eventDateTime < today;
+
+    if (eventTime) {
+      const [hours, minutes] = eventTime.split(':').map(Number);
+      eventDateTime.setHours(hours, minutes, 0, 0);
+    } else {
+      eventDateTime.setHours(23, 59, 59, 999);
+    }
+
+    return eventDateTime < now;
   };
 
-  // Sort and filter events
   const getSortedAndFilteredEvents = () => {
     let filtered = events.filter((event) => {
       const matchesLocation = event.address.toLowerCase().includes(searchLocation.toLowerCase());
-      const isPast = isEventPast(event.event_date);
+      const isPast = isEventPast(event.event_date, event.event_time);
       const isBooked = bookedEventIds.has(event.id);
 
       if (activeFilter === 'available') {
@@ -147,34 +152,27 @@ export default function EventsPage() {
       } else if (activeFilter === 'past') {
         return matchesLocation && isPast;
       }
-      return matchesLocation; // 'all'
+      return matchesLocation;
     });
 
-    // Sort: available first, booked second, past/cancelled last
     return filtered.sort((a, b) => {
-      const aIsPast = isEventPast(a.event_date);
-      const bIsPast = isEventPast(b.event_date);
+      const aIsPast = isEventPast(a.event_date, a.event_time);
+      const bIsPast = isEventPast(b.event_date, b.event_time);
       const aIsBooked = bookedEventIds.has(a.id);
       const bIsBooked = bookedEventIds.has(b.id);
       const aFullyBooked = a.available_slots === 0;
       const bFullyBooked = b.available_slots === 0;
 
-      // Past events go last
       if (aIsPast && !bIsPast) return 1;
       if (!aIsPast && bIsPast) return -1;
 
-      // For non-past events
       if (!aIsPast && !bIsPast) {
-        // Available to book first
         if (!aIsBooked && !aFullyBooked && (bIsBooked || bFullyBooked)) return -1;
         if ((aIsBooked || aFullyBooked) && !bIsBooked && !bFullyBooked) return 1;
-
-        // Already booked second
         if (aIsBooked && !bIsBooked && !bFullyBooked) return -1;
         if (!aIsBooked && !aFullyBooked && bIsBooked) return 1;
       }
 
-      // Sort by date (newest first for upcoming, oldest first for past)
       return aIsPast
         ? new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
         : new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
@@ -183,21 +181,18 @@ export default function EventsPage() {
 
   const sortedAndFilteredEvents = getSortedAndFilteredEvents();
 
-  // Pagination
   const totalPages = Math.ceil(sortedAndFilteredEvents.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedEvents = sortedAndFilteredEvents.slice(startIndex, endIndex);
 
-  // Reset to page 1 when filter or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [activeFilter, searchLocation]);
 
-  // Count badges
-  const availableCount = events.filter(e => !isEventPast(e.event_date) && !bookedEventIds.has(e.id) && e.available_slots > 0).length;
-  const bookedCount = events.filter(e => bookedEventIds.has(e.id) && !isEventPast(e.event_date)).length;
-  const pastCount = events.filter(e => isEventPast(e.event_date)).length;
+  const availableCount = events.filter(e => !isEventPast(e.event_date, e.event_time) && !bookedEventIds.has(e.id) && e.available_slots > 0).length;
+  const bookedCount = events.filter(e => bookedEventIds.has(e.id) && !isEventPast(e.event_date, e.event_time)).length;
+  const pastCount = events.filter(e => isEventPast(e.event_date, e.event_time)).length;
 
   return (
     <ProtectedRoute requiredRole="participant">
@@ -209,9 +204,7 @@ export default function EventsPage() {
           onClose={() => setToast({ ...toast, show: false })}
         />
 
-        {/* Search Bar */}
         <div className="mb-6 relative">
-
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
             type="text"
@@ -220,10 +213,8 @@ export default function EventsPage() {
             onChange={(e) => setSearchLocation(e.target.value)}
             className="pl-10 h-12"
           />
-
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <Button
             onClick={() => setActiveFilter('all')}
@@ -269,7 +260,6 @@ export default function EventsPage() {
           </Button>
         </div>
 
-        {/* Events Grid */}
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-500">Loading events...</p>
@@ -287,7 +277,7 @@ export default function EventsPage() {
                 const bookedSlots = event.total_slots - event.available_slots;
                 const percentage = capacityPercentage(bookedSlots, event.total_slots);
                 const isBooked = bookedEventIds.has(event.id);
-                const isPast = isEventPast(event.event_date);
+                const isPast = isEventPast(event.event_date, event.event_time);
 
                 return (
                   <Card
@@ -296,7 +286,6 @@ export default function EventsPage() {
                   >
                     <CardContent>
                       <div className="flex flex-col gap-4">
-                        {/* Event Info */}
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-2">
                             <h3 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-2">{event.name}</h3>
@@ -332,7 +321,6 @@ export default function EventsPage() {
                             </div>
                           </div>
 
-                          {/* Capacity Bar */}
                           <div>
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs text-gray-600 flex items-center gap-1">
@@ -362,7 +350,6 @@ export default function EventsPage() {
                           </div>
                         </div>
 
-                        {/* Action Buttons - Stack vertically on all screen sizes */}
                         <div className={`flex flex-col gap-2 pt-4 border-t ${isPast ? 'pointer-events-none' : ''}`}>
                           {!isPast && userRole === 'participant' ? (
                             <>
@@ -438,7 +425,6 @@ export default function EventsPage() {
               })}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
                 <Button
