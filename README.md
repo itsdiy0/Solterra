@@ -12,6 +12,10 @@ A comprehensive event management platform for ROSE Foundation, a Malaysian NGO p
 - Secure result viewing with OTP verification
 - QR code check-in system
 
+## Requirements
+- Docker Desktop
+- Python 3.11/3.12 (for best compatibility, Python 3.13 has backward compability issues)
+
 ## Getting Started
 download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/) on your machine.   
 
@@ -19,6 +23,7 @@ start by cloning the github repo
 ```bash
 git clone https://github.com/itsdiy0/Solterra
 ```
+> Docker app must be running in the background in order to execute this command.  
 Running postgres as DB using docker compose 
 ```bash
 docker-compose up -d 
@@ -29,7 +34,7 @@ docker-compose up -d
 cd backend
 
 # Initialise virtual enviornment
-virtualenv venv
+python3 -m venv venv
 source venv/bin/activate
 
 # Install dependencies
@@ -58,7 +63,7 @@ npm install
 
 # Set up environment variables
 cp .env.example .env
-# Add: NEXT_PUBLIC_API_URL=http://localhost:8000
+# Add: NEXT_PUBLIC_API_URL=http://localhost:8000, and Google Maps API credentials
 
 # Start development server
 npm run dev
@@ -90,4 +95,5 @@ SMS mode is mock by default, however you can change it to live to use Twilio as 
 ```bash
 SMS_MODE=mock #live
 ```
+> SMS using "mock" will be sent to the console for backend.
 
