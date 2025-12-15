@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import Toast from '@/components/ui/toast';
 
 interface Event {
   id: string;
@@ -44,6 +45,15 @@ export default function AdminEventsPage() {
   const [showMyEventsOnly, setShowMyEventsOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; show: boolean }>({
+    message: '',
+    type: 'success',
+    show: false,
+  });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTargetName, setDeleteTargetName] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const ITEMS_PER_PAGE = 12;
 
@@ -83,9 +93,22 @@ export default function AdminEventsPage() {
     }
   };
 
-  const handleDelete = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+  const openDeleteModal = (eventId: string, eventName?: string) => {
+    setDeleteTargetId(eventId);
+    setDeleteTargetName(eventName || null);
+    setShowDeleteModal(true);
+  };
 
+  const closeDeleteModal = () => {
+    if (deleting) return;
+    setShowDeleteModal(false);
+    setDeleteTargetId(null);
+    setDeleteTargetName(null);
+  };
+
+  const handleDelete = async (eventId?: string | null) => {
+    if (!eventId) return;
+    setDeleting(true);
     const token = localStorage.getItem('access_token');
 
     try {
@@ -101,10 +124,14 @@ export default function AdminEventsPage() {
         throw new Error(errData.detail || 'Failed to delete event');
       }
 
-      alert('Event deleted successfully!');
+      setToast({ message: 'Event deleted successfully!', type: 'success', show: true });
+      closeDeleteModal();
       fetchEvents();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete event');
+      setToast({ message: err.message || 'Failed to delete event', type: 'error', show: true });
+      closeDeleteModal();
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -225,6 +252,12 @@ export default function AdminEventsPage() {
           </Button>
         </div>
 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          show={toast.show}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
         <div className="mb-6 grid grid-cols-1 md:grid-cols-[90%_10%] gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
@@ -416,7 +449,7 @@ export default function AdminEventsPage() {
                             Participants
                           </Button>
                           <Button
-                            onClick={() => handleDelete(event.event_code)}
+                            onClick={() => openDeleteModal(event.event_code, event.name)}
                             variant="outline"
                             size="sm"
                             className="w-full sm:flex-1 text-red-600 hover:bg-red-50 border-red-300"
@@ -468,6 +501,20 @@ export default function AdminEventsPage() {
               </div>
             )}
           </>
+        )}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40" onClick={closeDeleteModal} />
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 z-10">
+              <h3 className="text-lg font-semibold mb-2">Delete Event</h3>
+              <p className="text-sm text-gray-600 mb-2">Are you sure you want to delete "{deleteTargetName}"?</p>
+              <p className="text-sm text-gray-600 mb-4">This action cannot be undone.</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={closeDeleteModal} disabled={deleting}>Cancel</Button>
+                <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleDelete(deleteTargetId)} disabled={deleting}>{deleting ? 'Deleting...' : 'Delete'}</Button>
+              </div>
+            </div>
+          </div>
         )}
       </DashboardLayout>
     </ProtectedRoute>
