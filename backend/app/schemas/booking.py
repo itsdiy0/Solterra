@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from typing import Optional
 from datetime import datetime, time
 from uuid import UUID
@@ -119,15 +119,19 @@ class CancelBookingResponse(BaseModel):
         }
 
 class AdminBookingResponse(BaseModel):
-    """Response schema for admin booking view (includes participant info)"""
     id: UUID
     booking_reference: str
     booking_status: str
     booked_at: datetime
-    cancelled_at: Optional[datetime] = None
-    participant: dict  # Safe participant fields only
+    cancelled_at: Optional[datetime]
+    has_result: bool 
+    participant: dict
     event: dict
-
+    
+    @field_serializer('id')
+    def serialize_uuid(self, value: UUID) -> str:
+        return str(value)
+    
     class Config:
         from_attributes = True
 

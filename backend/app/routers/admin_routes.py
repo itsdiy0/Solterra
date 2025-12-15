@@ -9,6 +9,7 @@ from app.models.booking import Booking
 from app.schemas.admin_schemas import AdminResponse
 from app.schemas.booking import AdminBookingListResponse, AdminBookingResponse
 from app.schemas.settings_schemas import UpdateProfileRequest, UpdatePasswordRequest, MessageResponse
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -18,6 +19,7 @@ def get_admin_profile(current_user: Admin = Depends(get_current_admin)):
     Get current admin's profile.
     """
     return current_user
+
 
 @router.get("/bookings", response_model=AdminBookingListResponse)
 def get_admin_event_bookings(
@@ -31,6 +33,7 @@ def get_admin_event_bookings(
         db.query(Booking)
         .join(Event)
         .filter(Event.created_by == current_user.id)
+        .options(joinedload(Booking.test_result))  # Load test_result relationship
         .order_by(Booking.booking_status.desc(), Booking.booked_at.desc())
         .all()
     )
@@ -45,6 +48,7 @@ def get_admin_event_bookings(
                 booking_status=booking.booking_status,
                 booked_at=booking.booked_at,
                 cancelled_at=booking.cancelled_at,
+                has_result=booking.test_result is not None, 
                 participant={
                     "id": str(booking.participant.id),
                     "name": booking.participant.name,
@@ -62,7 +66,6 @@ def get_admin_event_bookings(
         )
     
     return AdminBookingListResponse(bookings=booking_responses, total=len(booking_responses))
-
 
 @router.post("/bookings/{booking_id}/check-in", status_code=status.HTTP_200_OK)
 def check_in_participant(
