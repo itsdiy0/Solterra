@@ -35,6 +35,7 @@ interface Event {
 
 interface Booking {
   id: string;
+  booking_status: string;
   event: {
     id: string;
   };
@@ -95,7 +96,7 @@ export default function EventsPage() {
 
   const fetchParticipantBookings = async (token: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/participant/bookings`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -103,9 +104,9 @@ export default function EventsPage() {
       if (res.ok) {
         const data = await res.json();
         const bookedIds: Set<string> = new Set(
-          data.bookings
-            .filter((b: any) => b.booking_status !== 'cancelled')
-            .map((b: any) => b.event.id)
+          data
+            .filter((b: Booking) => b.booking_status !== 'cancelled')
+            .map((b: Booking) => b.event.id)
         );
         setBookedEventIds(bookedIds);
       }
@@ -359,7 +360,7 @@ export default function EventsPage() {
                                 {isBooked ? (
                                   <Button
                                     onClick={() => router.push('/bookings')}
-                                    className="w-full h-11 bg-gray-500 hover:bg-gray-600 text-white font-semibold"
+                                    className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-semibold"
                                   >
                                     <CheckCircle className="w-4 h-4 mr-2" />
                                     Already Booked

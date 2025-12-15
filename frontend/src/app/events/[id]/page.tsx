@@ -133,7 +133,10 @@ export default function EventBookingPage() {
 
       if (res.ok) {
         const bookings = await res.json();
-        const hasBooked = bookings.some((b: any) => b.event.id === eventId);
+        // Check by event_code since eventId from URL params is the event_code
+        const hasBooked = bookings.some((b: any) => 
+          b.booking_status !== 'cancelled' && b.event.event_code === eventId
+        );
         setIsBooked(hasBooked);
       }
     } catch (err) {
@@ -466,18 +469,20 @@ export default function EventBookingPage() {
                 )}
 
                 {isBooked && (
-                  <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 text-center">
-                    <p className="text-gray-700 font-medium">You have already booked this event</p>
+                  <div className="bg-blue-50 border border-blue-300 rounded-lg p-6 text-center">
+                    <CheckCircle className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+                    <p className="text-blue-900 font-semibold text-lg mb-2">You have already booked this event</p>
+                    <p className="text-blue-700 text-sm mb-4">View your booking details in My Bookings</p>
                     <Button
                       onClick={() => router.push('/bookings')}
-                      className="mt-3 bg-emerald-600 hover:bg-emerald-700"
+                      className="bg-blue-600 hover:bg-blue-700"
                     >
                       View My Bookings
                     </Button>
                   </div>
                 )}
 
-                {event.available_slots === 0 && (
+                {event.available_slots === 0 && !isBooked && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
                     <p className="text-red-700 font-medium">This event is fully booked</p>
                   </div>
@@ -485,8 +490,8 @@ export default function EventBookingPage() {
               </div>
             )}
 
-            {/* Step 2: Eligibility Questions */}
-            {currentStep === 'eligibility' && (
+            {/* Rest of the steps remain the same - only showing if not already booked */}
+            {!isBooked && currentStep === 'eligibility' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <button
@@ -627,8 +632,8 @@ export default function EventBookingPage() {
               </div>
             )}
 
-            {/* Step 3: Time Slot Selection */}
-            {currentStep === 'time-slot' && hasTimeSlots && (
+            {/* Time Slot Selection - rest of the code continues as before */}
+            {!isBooked && currentStep === 'time-slot' && hasTimeSlots && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <button
@@ -690,8 +695,8 @@ export default function EventBookingPage() {
               </div>
             )}
 
-            {/* Step 4: Confirmation */}
-            {currentStep === 'confirmation' && (
+            {/* Confirmation Step */}
+            {!isBooked && currentStep === 'confirmation' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3 mb-6">
                   <button
@@ -703,7 +708,6 @@ export default function EventBookingPage() {
                   <h2 className="text-2xl font-bold">Confirm Booking</h2>
                 </div>
 
-                {/* Event Summary */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
                   <h3 className="font-semibold text-gray-900">Booking Summary</h3>
                   <div className="space-y-2 text-sm">
@@ -733,7 +737,6 @@ export default function EventBookingPage() {
                   </div>
                 </div>
 
-                {/* Terms and Conditions */}
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <Checkbox
@@ -769,7 +772,7 @@ export default function EventBookingPage() {
               </div>
             )}
 
-            {/* Step 5: Success */}
+            {/* Success Step */}
             {currentStep === 'success' && (
               <div className="py-12 text-center">
                 <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
