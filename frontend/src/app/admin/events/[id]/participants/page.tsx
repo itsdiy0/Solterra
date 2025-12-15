@@ -7,7 +7,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Toast from '@/components/ui/toast';
-import { User, Phone, CreditCard, CheckCircle, XCircle, Calendar, ArrowLeft, Clock, Download } from 'lucide-react';
+import { User, Phone, CreditCard, CheckCircle, XCircle, Calendar, ArrowLeft, Clock, Download, Search } from 'lucide-react';
 
 interface Participant {
   id: string;
@@ -36,6 +36,7 @@ export default function EventParticipantsPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [checkingIn, setCheckingIn] = useState<Set<string>>(new Set());
@@ -108,7 +109,7 @@ export default function EventParticipantsPage() {
         show: true 
       });
       
-      fetchEventParticipants(); // Refresh list
+      fetchEventParticipants();
     } catch (err: any) {
       console.error('Check-in error:', err);
       setToast({ 
@@ -160,6 +161,17 @@ export default function EventParticipantsPage() {
       });
     }
   };
+
+  // Filter participants based on search query
+  const filteredParticipants = participants.filter(participant => {
+    const query = searchQuery.toLowerCase();
+    return (
+      participant.name.toLowerCase().includes(query) ||
+      participant.phone_number.includes(query) ||
+      participant.mykad_id.toLowerCase().includes(query) ||
+      participant.booking_reference.toLowerCase().includes(query)
+    );
+  });
 
   if (loading) {
     return (
@@ -246,8 +258,39 @@ export default function EventParticipantsPage() {
             </CardContent>
           </Card>
 
+          {/* Search Bar */}
+          {participants.length > 0 && (
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name, phone, MyKad, or booking reference..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              {searchQuery && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Found {filteredParticipants.length} of {participants.length} participants
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Participants List */}
-          <h3 className="text-xl font-bold mb-4">Participants ({participants.length})</h3>
+          <h3 className="text-xl font-bold mb-4">
+            Participants ({searchQuery ? filteredParticipants.length : participants.length})
+          </h3>
 
           {participants.length === 0 ? (
             <Card>
@@ -255,9 +298,22 @@ export default function EventParticipantsPage() {
                 <p className="text-gray-500">No participants registered yet</p>
               </CardContent>
             </Card>
+          ) : filteredParticipants.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-gray-500">No participants match your search</p>
+                <Button
+                  variant="outline"
+                  onClick={() => setSearchQuery('')}
+                  className="mt-4"
+                >
+                  Clear Search
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-3">
-              {participants.map((participant) => {
+              {filteredParticipants.map((participant) => {
                 const isCheckingIn = checkingIn.has(participant.id);
                 const isCheckedIn = participant.booking_status === 'checked_in';
                 const isCancelled = participant.booking_status === 'cancelled';

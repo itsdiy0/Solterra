@@ -48,6 +48,7 @@ class EventResponse(BaseModel):
     status: str
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    created_by: Optional[UUID] = None 
     
     @field_serializer('id')
     def serialize_id(self, value: UUID) -> str:

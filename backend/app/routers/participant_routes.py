@@ -14,6 +14,7 @@ from app.schemas.booking import (
 )
 from app.schemas.participant_schemas import ParticipantResponse
 from app.services.booking_service import create_booking, cancel_booking
+from app.schemas.settings_schemas import UpdateProfileRequest
 
 router = APIRouter(prefix="/participant", tags=["Participant"])
 
@@ -105,3 +106,15 @@ def cancel_my_booking(
         booking_reference=booking.booking_reference,
         slots_released=1
     )
+
+@router.put("/profile", response_model=ParticipantResponse)
+def update_participant_profile(
+    request: UpdateProfileRequest,
+    db: Session = Depends(get_db),
+    current_user: Participant = Depends(get_current_participant)
+):
+    """Update participant profile (name only)"""
+    current_user.name = request.name
+    db.commit()
+    db.refresh(current_user)
+    return current_user

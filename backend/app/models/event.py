@@ -7,9 +7,6 @@ from datetime import datetime
 import enum
 from app.database import Base
 
-# --------------------------------------------------------
-# ENUM CLASS
-# --------------------------------------------------------
 class EventStatus(str, enum.Enum):
     draft = "draft"
     published = "published"
@@ -26,7 +23,7 @@ class Event(Base):
     address = Column(Text, nullable=False)
     latitude = Column(Numeric(10, 8))
     longitude = Column(Numeric(11, 8))
-    time_slots = Column(JSON, nullable=True)  # Format: [{"start": "09:00", "end": "10:00", "slots": 20, "available": 15}]
+    time_slots = Column(JSON, nullable=True) 
     total_slots = Column(Integer, nullable=False)
     available_slots = Column(Integer, nullable=False)
     additional_info = Column(Text)

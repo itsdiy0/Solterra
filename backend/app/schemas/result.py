@@ -32,7 +32,6 @@ class ResultResponse(BaseModel):
     sms_sent: bool
     sms_sent_at: Optional[datetime]
     
-    # ✅ Convert UUIDs to strings automatically
     @field_serializer('id', 'booking_id', 'uploaded_by')
     def serialize_uuid(self, value: UUID) -> str:
         return str(value)
@@ -140,3 +139,46 @@ class ViewResultResponse(BaseModel):
                 "event_date": "2025-11-15"
             }
         }
+
+class ParticipantInfo(BaseModel):
+    id: str
+    name: str
+    mykad_id: str
+    phone_number: str
+
+class EventInfo(BaseModel):
+    id: str
+    name: str
+    event_code: str
+    event_date: str
+
+class BookingInfo(BaseModel):
+    id: str
+    booking_reference: str
+    participant: ParticipantInfo
+    event: EventInfo
+
+class EnrichedResultResponse(BaseModel):
+    """Result with participant and event details"""
+    id: UUID
+    booking_id: UUID
+    result_category: str
+    result_notes: Optional[str]
+    result_file_url: Optional[str]
+    uploaded_by: UUID
+    uploaded_at: datetime
+    sms_sent: bool
+    sms_sent_at: Optional[datetime]
+    booking: BookingInfo
+    
+    @field_serializer('id', 'booking_id', 'uploaded_by')
+    def serialize_uuid(self, value: UUID) -> str:
+        return str(value)
+    
+    class Config:
+        from_attributes = True
+
+class EnrichedResultListResponse(BaseModel):
+    """Response schema for enriched result list"""
+    results: list[EnrichedResultResponse]
+    total: int

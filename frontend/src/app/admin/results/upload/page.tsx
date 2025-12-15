@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, CheckCircle, User, Phone, CreditCard, Calendar, FileText } from 'lucide-react';
+import { Search, CheckCircle, Phone, CreditCard, Calendar, FileText, AlertCircle } from 'lucide-react';
 import Toast from '@/components/ui/toast';
 
 interface Event {
@@ -155,6 +155,11 @@ export default function UploadResultPage() {
     
     if (!selectedBooking || !resultCategory || !file) {
       setError('Please fill all required fields');
+      setToast({
+        message: 'Please fill all required fields',
+        type: 'error',
+        show: true,
+      });
       return;
     }
 
@@ -204,6 +209,11 @@ export default function UploadResultPage() {
 
   const selectedEventData = events.find(e => e.id === selectedEvent);
   const selectedBookingData = filteredBookings.find(b => b.id === selectedBooking);
+  const selectedHasResult = selectedBookingData?.has_result || false;
+
+  // Count bookings with and without results for selected event
+  const pendingCount = filteredBookings.filter(b => !b.has_result).length;
+  const completedCount = filteredBookings.filter(b => b.has_result).length;
 
   return (
     <ProtectedRoute requiredRole="admin">
@@ -224,7 +234,7 @@ export default function UploadResultPage() {
               </p>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-6">
                 
                 {/* Step 1: Event & Participant Selection */}
                 <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
@@ -235,12 +245,12 @@ export default function UploadResultPage() {
                   
                   <div className="grid grid-cols-12 gap-4">
                     {/* Event Selection */}
-                    <div className="col-span-5 space-y-2">
+                    <div className="col-span-12 md:col-span-5 space-y-2">
                       <Label htmlFor="event" className="text-xs font-medium text-gray-700">
                         Event *
                       </Label>
                       <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                        <SelectTrigger className={`h-11 bg-white w-full ${selectedEvent ? 'p-7' : ''}`}>
+                        <SelectTrigger className="h-11 py-6 bg-white w-full">
                           <SelectValue placeholder="Choose event..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -264,21 +274,28 @@ export default function UploadResultPage() {
                         </SelectContent>
                       </Select>
                       {selectedEventData && (
-                        <p className="text-xs text-gray-500">
-                          {filteredBookings.length} checked-in participant(s)
-                        </p>
+                        <div className="text-xs space-y-1">
+                          <p className="text-emerald-600 font-medium">
+                            {pendingCount} pending upload{pendingCount !== 1 ? 's' : ''}
+                          </p>
+                          {completedCount > 0 && (
+                            <p className="text-gray-500">
+                              {completedCount} completed
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
 
                     {/* Participant Selection */}
-                    <div className="col-span-7 space-y-2">
+                    <div className="col-span-12 md:col-span-7 space-y-2">
                       <Label htmlFor="participant" className="text-xs font-medium text-gray-700">
                         Participant *
                       </Label>
                       
                       {selectedEvent && (
                         <div className="relative mb-2">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                           <Input
                             type="text"
                             placeholder="Search by name, phone, MyKad..."
@@ -294,7 +311,7 @@ export default function UploadResultPage() {
                         onValueChange={setSelectedBooking}
                         disabled={!selectedEvent}
                       >
-                        <SelectTrigger className={`h-11 bg-white w-full ${selectedBooking ? 'py-7' : ''}`}>
+                        <SelectTrigger className="h-11 bg-white w-full">
                           <SelectValue placeholder={
                             !selectedEvent 
                               ? "Select event first..." 
@@ -327,7 +344,7 @@ export default function UploadResultPage() {
                                       {hasResult && (
                                         <span className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full whitespace-nowrap">
                                           <CheckCircle className="w-3 h-3" />
-                                          Uploaded
+                                          Result Uploaded
                                         </span>
                                       )}
                                     </div>
@@ -356,12 +373,32 @@ export default function UploadResultPage() {
 
                   {/* Selected Participant Summary */}
                   {selectedBookingData && (
-                    <div className="mt-4 p-3 bg-white border border-emerald-200 rounded-lg">
+                    <div className={`mt-4 p-3 border rounded-lg ${
+                      selectedHasResult 
+                        ? 'bg-amber-50 border-amber-300' 
+                        : 'bg-emerald-50 border-emerald-200'
+                    }`}>
                       <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="w-4 h-4 text-emerald-600" />
-                        <span className="text-xs font-semibold text-emerald-700">Selected Participant</span>
+                        {selectedHasResult ? (
+                          <>
+                            <AlertCircle className="w-4 h-4 text-amber-600" />
+                            <span className="text-xs font-semibold text-amber-700">Result Already Uploaded</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 text-emerald-600" />
+                            <span className="text-xs font-semibold text-emerald-700">Selected Participant</span>
+                          </>
+                        )}
                       </div>
-                      <div className="grid grid-cols-4 gap-3 text-sm">
+                      
+                      {selectedHasResult && (
+                        <div className="mb-3 p-2 bg-amber-100 border border-amber-200 rounded text-xs text-amber-800">
+                          ⚠️ This participant already has a result uploaded. Please select a different participant.
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div>
                           <p className="text-xs text-gray-500 mb-0.5">Name</p>
                           <p className="font-medium text-gray-900">{selectedBookingData.participant.name}</p>
@@ -384,7 +421,7 @@ export default function UploadResultPage() {
                 </div>
 
                 {/* Step 2: Result Details */}
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                <div className={`space-y-4 p-4 bg-gray-50 rounded-lg border ${selectedHasResult ? 'opacity-50 pointer-events-none' : ''}`}>
                   <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <span className="flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full text-xs">2</span>
                     Result Details
@@ -397,7 +434,7 @@ export default function UploadResultPage() {
                         Result Category *
                       </Label>
                       <Select value={resultCategory} onValueChange={setResultCategory}>
-                        <SelectTrigger className={`h-11 bg-white ${resultCategory ? 'py-2' : ''}`}>
+                        <SelectTrigger className="h-11 bg-white">
                           <SelectValue placeholder="Select result category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -435,7 +472,7 @@ export default function UploadResultPage() {
                 </div>
 
                 {/* Step 3: File Upload */}
-                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                <div className={`space-y-4 p-4 bg-gray-50 rounded-lg border ${selectedHasResult ? 'opacity-50 pointer-events-none' : ''}`}>
                   <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                     <span className="flex items-center justify-center w-6 h-6 bg-emerald-500 text-white rounded-full text-xs">3</span>
                     Upload PDF Document
@@ -491,8 +528,8 @@ export default function UploadResultPage() {
                     Cancel
                   </Button>
                   <Button
-                    type="submit"
-                    disabled={loading || !selectedBooking || !resultCategory || !file}
+                    onClick={handleSubmit}
+                    disabled={loading || !selectedBooking || !resultCategory || !file || selectedHasResult}
                     className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
@@ -503,12 +540,14 @@ export default function UploadResultPage() {
                         </svg>
                         Uploading...
                       </span>
+                    ) : selectedHasResult ? (
+                      'Result Already Uploaded'
                     ) : (
                       'Upload Result'
                     )}
                   </Button>
                 </div>
-              </form>
+              </div>
             </CardContent>
           </Card>
         </div>
