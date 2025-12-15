@@ -221,7 +221,7 @@ export default function EventsPage() {
             <Button
               onClick={() => setActiveFilter('all')}
               variant={activeFilter === 'all' ? 'default' : 'outline'}
-              className={`w-full ${activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              className={`w-full ${activeFilter === 'all' ? 'text-white bg-emerald-600 hover:bg-emerald-700' : ''}`}
             >
               <span className="truncate">All Events</span>
               <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
@@ -231,7 +231,7 @@ export default function EventsPage() {
             <Button
               onClick={() => setActiveFilter('available')}
               variant={activeFilter === 'available' ? 'default' : 'outline'}
-              className={`w-full ${activeFilter === 'available' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              className={`w-full ${activeFilter === 'available' ? 'text-white bg-emerald-600 hover:bg-emerald-700' : ''}`}
             >
               <span className="truncate">Available</span>
               <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
@@ -242,7 +242,7 @@ export default function EventsPage() {
               <Button
                 onClick={() => setActiveFilter('booked')}
                 variant={activeFilter === 'booked' ? 'default' : 'outline'}
-                className={`w-full ${activeFilter === 'booked' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                className={`w-full ${activeFilter === 'booked' ? 'text-white bg-emerald-600 hover:bg-emerald-700' : ''}`}
               >
                 <span className="truncate">My Bookings</span>
                 <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
@@ -253,7 +253,7 @@ export default function EventsPage() {
             <Button
               onClick={() => setActiveFilter('past')}
               variant={activeFilter === 'past' ? 'default' : 'outline'}
-              className={`w-full ${activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              className={`w-full ${activeFilter === 'past' ? 'text-white bg-emerald-600 hover:bg-emerald-700' : ''}`}
             >
               <span className="truncate">Past Events</span>
               <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">

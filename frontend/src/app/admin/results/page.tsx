@@ -207,7 +207,7 @@ export default function AdminResultsPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className="grid grid-cols-1 md:grid-cols-[60%_40%] gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-[70%_30%] gap-2 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
             <Input
@@ -223,6 +223,7 @@ export default function AdminResultsPage() {
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
             className="h-12 px-4 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            style={{ marginRight: '8px' }}
           >
             <option value="all">All Events</option>
             {events.map((event) => (
