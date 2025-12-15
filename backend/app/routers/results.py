@@ -24,6 +24,7 @@ from app.services.file_upload_service import file_upload_service
 from app.services.sms_service import send_result_notification_sms
 from app.services.otp_service import create_otp_record, verify_otp
 from pydantic import BaseModel
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(tags=["Results"])
 
@@ -142,21 +143,61 @@ def send_result_sms(
     )
 
 
-@router.get("/admin/results", response_model=ResultListResponse)
+@router.get("/admin/results")
 def get_all_results(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_admin)
 ):
     """
-    Admin views all test results.
+    Admin views all test results with participant and event data.
     """
-    results = db.query(TestResult).order_by(TestResult.uploaded_at.desc()).all()
-    
-    return ResultListResponse(
-        results=results,
-        total=len(results)
+    results = (
+        db.query(TestResult)
+        .options(
+            joinedload(TestResult.booking)
+            .joinedload(Booking.participant),
+            joinedload(TestResult.booking)
+            .joinedload(Booking.event)
+        )
+        .order_by(TestResult.uploaded_at.desc())
+        .all()
     )
-
+    
+    # Manually construct response 
+    enriched_results = []
+    for result in results:
+        enriched_results.append({
+            "id": str(result.id),
+            "booking_id": str(result.booking_id),
+            "result_category": result.result_category,
+            "result_notes": result.result_notes,
+            "result_file_url": result.result_file_url,
+            "uploaded_by": str(result.uploaded_by),
+            "uploaded_at": result.uploaded_at.isoformat(),
+            "sms_sent": result.sms_sent,
+            "sms_sent_at": result.sms_sent_at.isoformat() if result.sms_sent_at else None,
+            "booking": {
+                "id": str(result.booking.id),
+                "booking_reference": result.booking.booking_reference,
+                "participant": {
+                    "id": str(result.booking.participant.id),
+                    "name": result.booking.participant.name,
+                    "mykad_id": result.booking.participant.mykad_id,
+                    "phone_number": result.booking.participant.phone_number
+                },
+                "event": {
+                    "id": str(result.booking.event.id),
+                    "name": result.booking.event.name,
+                    "event_code": result.booking.event.event_code,
+                    "event_date": str(result.booking.event.event_date)
+                }
+            }
+        })
+    
+    return {
+        "results": enriched_results,
+        "total": len(enriched_results)
+    }
 
 # PARTICIPANT ROUTES
 @router.get("/participant/results", response_model=List[ParticipantResultResponse])
