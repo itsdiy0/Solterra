@@ -29,6 +29,7 @@ interface Event {
   total_slots: number;
   available_slots: number;
   status: string;
+  created_by?: string;
 }
 
 type FilterType = 'all' | 'published' | 'draft' | 'upcoming' | 'past';
@@ -40,11 +41,23 @@ export default function AdminEventsPage() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [showMyEventsOnly, setShowMyEventsOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
 
   const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
+    // Get current admin ID from token
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentAdminId(payload.sub);
+      } catch (e) {
+        console.error('Failed to decode token:', e);
+      }
+    }
     fetchEvents();
   }, []);
 
@@ -117,17 +130,26 @@ export default function AdminEventsPage() {
         event.address.toLowerCase().includes(searchTerm.toLowerCase());
 
       const isPast = isEventPast(event.event_date, event.event_time);
+      const isMyEvent = currentAdminId && event.created_by === currentAdminId;
+
+      // First filter by "My Events" toggle if enabled
+      if (showMyEventsOnly && !isMyEvent) {
+        return false;
+      }
+
+      // Then apply the regular filters
+      if (!matchesSearch) return false;
 
       if (activeFilter === 'published') {
-        return matchesSearch && event.status === 'published';
+        return event.status === 'published';
       } else if (activeFilter === 'draft') {
-        return matchesSearch && event.status === 'draft';
+        return event.status === 'draft';
       } else if (activeFilter === 'upcoming') {
-        return matchesSearch && !isPast;
+        return !isPast;
       } else if (activeFilter === 'past') {
-        return matchesSearch && isPast;
+        return isPast;
       }
-      return matchesSearch;
+      return true; // 'all' filter
     });
 
     return filtered.sort((a, b) => {
@@ -152,12 +174,22 @@ export default function AdminEventsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, searchTerm]);
+  }, [activeFilter, searchTerm, showMyEventsOnly]);
 
-  const publishedCount = events.filter(e => e.status === 'published').length;
-  const draftCount = events.filter(e => e.status === 'draft').length;
-  const upcomingCount = events.filter(e => !isEventPast(e.event_date, e.event_time)).length;
-  const pastCount = events.filter(e => isEventPast(e.event_date, e.event_time)).length;
+  // Calculate counts based on current "My Events" toggle state
+  const getFilteredForCount = () => {
+    if (showMyEventsOnly) {
+      return events.filter(e => currentAdminId && e.created_by === currentAdminId);
+    }
+    return events;
+  };
+
+  const eventsForCount = getFilteredForCount();
+  const publishedCount = eventsForCount.filter(e => e.status === 'published').length;
+  const draftCount = eventsForCount.filter(e => e.status === 'draft').length;
+  const upcomingCount = eventsForCount.filter(e => !isEventPast(e.event_date, e.event_time)).length;
+  const pastCount = eventsForCount.filter(e => isEventPast(e.event_date, e.event_time)).length;
+  const myEventsCount = currentAdminId ? events.filter(e => e.created_by === currentAdminId).length : 0;
 
   if (loading) {
     return (
@@ -186,72 +218,85 @@ export default function AdminEventsPage() {
           <h2 className="text-2xl font-bold">Events Management</h2>
           <Button
             onClick={() => router.push('/admin/events/create')}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Event
           </Button>
         </div>
 
-        <div className="mb-6 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-          <Input
-            type="text"
-            placeholder="Search by name, code, or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-12"
-          />
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-[90%_10%] gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Search by name, code, or location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-12"
+            />
+          </div>
+          
+          <Button
+            onClick={() => setShowMyEventsOnly(!showMyEventsOnly)}
+            variant={showMyEventsOnly ? 'default' : 'outline'}
+            className={`w-full h-12 ${showMyEventsOnly ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
+          >
+            <span className="truncate">My Events</span>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
+              {myEventsCount}
+            </span>
+          </Button>
         </div>
 
         <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           <Button
             onClick={() => setActiveFilter('all')}
             variant={activeFilter === 'all' ? 'default' : 'outline'}
-            className={`w-full ${activeFilter === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`w-full ${activeFilter === 'all' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
           >
             <span className="truncate">All Events</span>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
-              {events.length}
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
+              {eventsForCount.length}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('published')}
             variant={activeFilter === 'published' ? 'default' : 'outline'}
-            className={`w-full ${activeFilter === 'published' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`w-full ${activeFilter === 'published' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
           >
             <span className="truncate">Published</span>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
               {publishedCount}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('draft')}
             variant={activeFilter === 'draft' ? 'default' : 'outline'}
-            className={`w-full ${activeFilter === 'draft' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`w-full ${activeFilter === 'draft' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
           >
             <span className="truncate">Draft</span>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
               {draftCount}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('upcoming')}
             variant={activeFilter === 'upcoming' ? 'default' : 'outline'}
-            className={`w-full ${activeFilter === 'upcoming' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`w-full ${activeFilter === 'upcoming' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
           >
             <span className="truncate">Upcoming</span>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
               {upcomingCount}
             </span>
           </Button>
           <Button
             onClick={() => setActiveFilter('past')}
             variant={activeFilter === 'past' ? 'default' : 'outline'}
-            className={`w-full ${activeFilter === 'past' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`w-full ${activeFilter === 'past' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : ''}`}
           >
             <span className="truncate">Past Events</span>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs flex-shrink-0">
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-black/20 text-xs flex-shrink-0">
               {pastCount}
             </span>
           </Button>

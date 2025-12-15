@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Toast from '@/components/ui/toast';
-import { FileText, Send, CheckCircle, Clock, Search, User, Shield, Calendar } from 'lucide-react';
+import { FileText, Send, CheckCircle, Clock, Search, User, Shield, Calendar, ExternalLink } from 'lucide-react';
 
 interface Participant {
   id: string;
@@ -39,6 +39,7 @@ interface Result {
   uploaded_at: string;
   sms_sent: boolean;
   sms_sent_at: string | null;
+  result_file_url: string | null;
   booking: Booking;
 }
 
@@ -255,147 +256,153 @@ export default function AdminResultsPage() {
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {/* Table Header */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-700">
-                <div className="col-span-2">Participant</div>
-                <div className="col-span-2">MyKad ID</div>
-                <div className="col-span-4">Event</div>
-                <div className="col-span-1">Result</div>
-                <div className="col-span-1">Uploaded</div>
-                <div className="col-span-1">SMS Status</div>
-                <div className="col-span-1">Action</div>
-              </div>
+              <div className="col-span-2">Participant</div>
+              <div className="col-span-2">MyKad ID</div>
+              <div className="col-span-2">Event</div>
+              <div className="col-span-1">Result</div>
+              <div className="col-span-2">Uploaded</div>
+              <div className="col-span-1">SMS</div>
+              <div className="col-span-2">Actions</div>
+            </div>
 
-              {/* Table Rows */}
-              <div className="divide-y">
-                {filteredResults.map((result) => {
-                  const isSending = sendingIds.has(result.id);
-                  
-                  return (
-                    <div
-                      key={result.id}
-                      className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 p-4 hover:bg-gray-50 transition-colors"
-                    >
-                      {/* Participant Name */}
-                      <div className="md:col-span-2">
-                        <p className="text-xs text-gray-500 md:hidden">Participant</p>
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="font-medium text-gray-900 break-words">
-                            {result.booking?.participant?.name || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* MyKad ID */}
-                      <div className="md:col-span-2">
-                        <p className="text-xs text-gray-500 md:hidden">MyKad ID</p>
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="font-mono text-sm text-gray-900">
-                            {result.booking?.participant?.mykad_id || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Event */}
-                      <div className="md:col-span-4">
-                        <p className="text-xs text-gray-500 md:hidden">Event</p>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900 break-words">
-                              {result.booking?.event?.name || 'N/A'}
-                            </p>
-                            <p className="text-xs text-gray-500">{result.booking?.event?.event_code || ''}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Result Category */}
-                      <div className="md:col-span-1">
-                        <p className="text-xs text-gray-500 md:hidden">Result</p>
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                            result.result_category === 'Normal'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {result.result_category === 'Normal' ? 'Normal' : 'Abnormal'}
+            {/* Table Rows */}
+            <div className="divide-y">
+              {filteredResults.map((result) => {
+                const isSending = sendingIds.has(result.id);
+                
+                return (
+                  <div
+                    key={result.id}
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    {/* Participant Name */}
+                    <div className="md:col-span-2">
+                      <p className="text-xs text-gray-500 md:hidden">Participant</p>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="font-medium text-gray-900 break-words">
+                          {result.booking?.participant?.name || 'N/A'}
                         </span>
                       </div>
+                    </div>
 
-                      {/* Uploaded Date */}
-                      <div className="md:col-span-1">
-                        <p className="text-xs text-gray-500 md:hidden">Uploaded</p>
-                        <p className="text-sm text-gray-900">
-                          {new Date(result.uploaded_at).toLocaleDateString('en-US', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(result.uploaded_at).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                    {/* MyKad ID */}
+                    <div className="md:col-span-2">
+                      <p className="text-xs text-gray-500 md:hidden">MyKad ID</p>
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="font-mono text-sm text-gray-900">
+                          {result.booking?.participant?.mykad_id || 'N/A'}
+                        </span>
                       </div>
+                    </div>
 
-                      {/* SMS Status */}
-                      <div className="md:col-span-1">
-                        <p className="text-xs text-gray-500 md:hidden">SMS Status</p>
-                        {result.sms_sent ? (
-                          <div className="flex items-center gap-2 text-emerald-600">
-                            <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm font-medium">Sent</p>
-                              <p className="text-xs">
-                                {new Date(result.sms_sent_at!).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 text-amber-600">
-                            <Clock className="w-4 h-4 flex-shrink-0" />
-                            <span className="text-sm font-medium">Pending</span>
-                          </div>
-                        )}
+                    {/* Event */}
+                    <div className="md:col-span-2">
+                      <p className="text-xs text-gray-500 md:hidden">Event</p>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 break-words">
+                            {result.booking?.event?.name || 'N/A'}
+                          </p>
+                          <p className="text-xs text-gray-500">{result.booking?.event?.event_code || ''}</p>
+                        </div>
                       </div>
+                    </div>
 
-                      {/* Action */}
-                      <div className="md:col-span-1 flex items-center">
-                        {!result.sms_sent && (
-                          <Button
-                            onClick={() => handleSendSMS(result.id)}
-                            disabled={isSending}
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto"
-                          >
-                            {isSending ? (
-                              <Clock className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Send className="w-4 h-4" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
+                    {/* Result Category */}
+                    <div className="md:col-span-1">
+                      <p className="text-xs text-gray-500 md:hidden">Result</p>
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          result.result_category === 'Normal'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {result.result_category === 'Normal' ? 'Normal' : 'Abnormal'}
+                      </span>
+                    </div>
 
-                      
-                      {result.result_notes && (
-                        <div className="md:col-span-12 mt-2 md:mt-0 md:ml-4">
-                          <p className="text-xs text-gray-500">Notes:</p>
-                          <p className="text-sm text-gray-700 italic">{result.result_notes}</p>
+                    {/* Uploaded Date */}
+                    <div className="md:col-span-2">
+                      <p className="text-xs text-gray-500 md:hidden">Uploaded</p>
+                      <p className="text-sm text-gray-900">
+                        {new Date(result.uploaded_at).toLocaleDateString('en-US', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(result.uploaded_at).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+
+                    {/* SMS Status */}
+                    <div className="md:col-span-1">
+                      <p className="text-xs text-gray-500 md:hidden">SMS Status</p>
+                      {result.sms_sent ? (
+                        <div className="flex items-center gap-1 text-emerald-600">
+                          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                          <span className="text-xs font-medium">Sent</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-amber-600">
+                          <Clock className="w-4 h-4 flex-shrink-0" />
+                          <span className="text-xs font-medium">Pending</span>
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Actions */}
+                    <div className="md:col-span-2 flex items-center gap-2">
+                      {result.result_file_url && (
+                        <Button
+                          onClick={() => window.open(result.result_file_url!, '_blank')}
+                          size="sm"
+                          variant="outline"
+                          className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                        >
+                          <ExternalLink className="w-4 h-4 md:mr-0 sm:mr-2" />
+                          <span className="hidden sm:inline">View</span>
+                        </Button>
+                      )}
+                      {!result.sms_sent && (
+                        <Button
+                          onClick={() => handleSendSMS(result.id)}
+                          disabled={isSending}
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                        >
+                          {isSending ? (
+                            <Clock className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Send className="text-white w-4 h-4 md:mr-0 sm:mr-2" />
+                              <span className="text-white hidden sm:inline">Send SMS</span>
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Notes (if any) - Full Width */}
+                    {result.result_notes && (
+                      <div className="md:col-span-12 mt-2 pt-2 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 mb-1">Notes:</p>
+                        <p className="text-sm text-gray-700 italic">{result.result_notes}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          </div>
         )}
       </DashboardLayout>
     </ProtectedRoute>
