@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
 from uuid import UUID
-
-from app.utils.security import get_current_admin
+from app.utils.security import get_current_admin, verify_password, hash_password
 from app.database import get_db
 from app.models.admin import Admin
 from app.models.event import Event
 from app.models.booking import Booking
 from app.schemas.admin_schemas import AdminResponse
 from app.schemas.booking import AdminBookingListResponse, AdminBookingResponse
+from app.schemas.settings_schemas import UpdateProfileRequest, UpdatePasswordRequest, MessageResponse
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -126,3 +125,37 @@ def check_in_participant(
         "participant_name": booking.participant.name,
         "booking_status": booking.booking_status
     }
+
+@router.put("/profile", response_model=AdminResponse)
+def update_admin_profile(
+    request: UpdateProfileRequest,
+    db: Session = Depends(get_db),
+    current_user: Admin = Depends(get_current_admin)
+):
+    """Update admin profile (name only)"""
+    current_user.name = request.name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/password", response_model=MessageResponse)
+def update_admin_password(
+    request: UpdatePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: Admin = Depends(get_current_admin)
+):
+    """Update admin password"""
+    # Verify current password
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=400,
+            detail="Current password is incorrect"
+        )
+    
+    # Update to new password 
+    current_user.password_hash = hash_password(request.new_password)  
+    db.commit()
+    db.refresh(current_user)
+    
+    return MessageResponse(message="Password updated successfully")
