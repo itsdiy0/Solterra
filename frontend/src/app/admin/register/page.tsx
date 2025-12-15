@@ -30,6 +30,12 @@ export default function AdminRegisterPage() {
       return;
     }
 
+    // Client-side password length check to give immediate feedback
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
     setLoading(true);
     setError('');
 

@@ -9,6 +9,11 @@ class AdminRegisterRequest(BaseModel):
 
     @validator("password")
     def validate_password_strength(cls, v):
+        # Provide a clear length-specific error message instead of the
+        # default pydantic message like "String should have at least 8 characters".
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+
         pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[\]{};:,.<>?/|`~]).{8,}$'
         if not re.match(pattern, v):
             raise ValueError(
