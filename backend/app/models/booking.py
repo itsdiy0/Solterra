@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, UniqueConstraint,Time
+from sqlalchemy import Column, String, DateTime, Time, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
@@ -21,13 +21,20 @@ class Booking(Base):
     test_result = relationship("TestResult", back_populates="booking", uselist=False)
     time_slot_start = Column(Time, nullable=True)
     time_slot_end = Column(Time, nullable=True)
+    
     # Relationships
     participant = relationship("Participant", back_populates="bookings")
     event = relationship("Event", back_populates="bookings")
 
-    # Constraint: One participant can only book one slot per event
+    # Partial unique constraint: One participant can only have ONE ACTIVE booking per event
     __table_args__ = (
-        UniqueConstraint('participant_id', 'event_id', name='unique_participant_event'),
+        Index(
+            'unique_active_participant_event',
+            'participant_id',
+            'event_id',
+            unique=True,
+            postgresql_where=(booking_status != 'cancelled')
+        ),
     )
 
     def __repr__(self):

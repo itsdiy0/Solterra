@@ -31,18 +31,25 @@ def create_booking(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
-    # Check if already booked - use event.id (the actual UUID)
-    existing = db.query(Booking).filter(
+    # Check if already booked with an ACTIVE booking
+    existing_active = db.query(Booking).filter(
         Booking.participant_id == participant_id,
         Booking.event_id == event.id,
         Booking.booking_status != "cancelled"
     ).first()
     
-    if existing:
+    if existing_active:
         raise HTTPException(
             status_code=400,
             detail="You have already booked this event"
         )
+    
+    # Check if there's a cancelled booking to reactivate
+    cancelled_booking = db.query(Booking).filter(
+        Booking.participant_id == participant_id,
+        Booking.event_id == event.id,
+        Booking.booking_status == "cancelled"
+    ).first()
     
     # Handle time slots
     slot_start_time = None
@@ -83,7 +90,29 @@ def create_booking(
         
         event.available_slots -= 1
     
-    # Create booking - use event.id (the actual UUID)
+    # If there's a cancelled booking, reactivate it instead of creating new
+    if cancelled_booking:
+        cancelled_booking.booking_status = "confirmed"
+        cancelled_booking.cancelled_at = None
+        cancelled_booking.booked_at = datetime.utcnow()
+        cancelled_booking.time_slot_start = slot_start_time
+        cancelled_booking.time_slot_end = slot_end_time
+        
+        db.commit()
+        db.refresh(cancelled_booking)
+        
+        # Send SMS confirmation
+        booking_details = {
+            "event_name": event.name,
+            "date": str(event.event_date),
+            "time": f"{time_slot_start}-{time_slot_end}" if time_slot_start else str(event.event_time),
+            "ref": cancelled_booking.booking_reference
+        }
+        send_booking_confirmation_sms(participant_phone, booking_details)
+        
+        return cancelled_booking
+    
+    # Create new booking if no cancelled booking exists
     booking = Booking(
         participant_id=participant_id,
         event_id=event.id,
