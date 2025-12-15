@@ -16,6 +16,7 @@ cryptography==46.0.3
 dnspython==2.8.0
 ecdsa==0.19.1
 email-validator==2.3.0
+Faker==38.2.0
 fastapi==0.104.1
 frozenlist==1.8.0
 h11==0.16.0
@@ -46,6 +47,7 @@ starlette==0.27.0
 twilio==8.10.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
+tzdata==2025.3
 urllib3==2.5.0
 uvicorn==0.24.0
 uvloop==0.22.1
