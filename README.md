@@ -41,6 +41,9 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
+# (Optional) generate seed data for testing purposes
+python3 -m seed.seed_data
+
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your credentials (PostgreSQL, Twilio, Cloudinary)
