@@ -3,10 +3,10 @@ Solterra Database Seed Script (Demo Version)
 ROSE Foundation Event Management System
 
 Booking Status Flow:
-- Confirmed: Participant has booked
-- Checked-in: Participant arrived at event
-- Completed: Checked-in + test results uploaded
-- Cancelled: Booking cancelled
+- confirmed: Participant has booked
+- checked_in: Participant arrived at event
+- completed: Checked-in + test results uploaded
+- cancelled: Booking cancelled
 
 Test Result Categories:
 - Normal
@@ -249,7 +249,7 @@ def seed_all():
         
         # ============================================================
         # BOOKINGS
-        # Statuses: Confirmed, Checked-in, Completed, Cancelled
+        # Statuses: confirmed, checked_in, completed, cancelled
         # ============================================================
         print("\n[BOOKINGS] Creating bookings...")
         
@@ -269,52 +269,52 @@ def seed_all():
         booking_configs = {
             0: {  # Completed event 1 - 8 participants
                 "bookings": [
-                    {"p_idx": 0, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 1, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 2, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 3, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 4, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 5, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 6, "status": "Checked-in", "will_have_results": False},
-                    {"p_idx": 7, "status": "Cancelled", "will_have_results": False},
+                    {"p_idx": 0, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 1, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 2, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 3, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 4, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 5, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 6, "status": "checked_in", "will_have_results": False},
+                    {"p_idx": 7, "status": "cancelled", "will_have_results": False},
                 ]
             },
             1: {  # Completed event 2 - 6 participants
                 "bookings": [
-                    {"p_idx": 2, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 3, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 4, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 8, "status": "Checked-in", "will_have_results": True},
-                    {"p_idx": 9, "status": "Checked-in", "will_have_results": False},
-                    {"p_idx": 10, "status": "Cancelled", "will_have_results": False},
+                    {"p_idx": 2, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 3, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 4, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 8, "status": "checked_in", "will_have_results": True},
+                    {"p_idx": 9, "status": "checked_in", "will_have_results": False},
+                    {"p_idx": 10, "status": "cancelled", "will_have_results": False},
                 ]
             },
             2: {  # Ongoing event - 7 participants
                 "bookings": [
-                    {"p_idx": 0, "status": "Checked-in", "will_have_results": False},
-                    {"p_idx": 1, "status": "Checked-in", "will_have_results": False},
-                    {"p_idx": 5, "status": "Checked-in", "will_have_results": False},
-                    {"p_idx": 6, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 7, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 8, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 11, "status": "Cancelled", "will_have_results": False},
+                    {"p_idx": 0, "status": "checked_in", "will_have_results": False},
+                    {"p_idx": 1, "status": "checked_in", "will_have_results": False},
+                    {"p_idx": 5, "status": "checked_in", "will_have_results": False},
+                    {"p_idx": 6, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 7, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 8, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 11, "status": "cancelled", "will_have_results": False},
                 ]
             },
             3: {  # Published event 1 - 5 participants
                 "bookings": [
-                    {"p_idx": 0, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 2, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 4, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 9, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 11, "status": "Confirmed", "will_have_results": False},
+                    {"p_idx": 0, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 2, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 4, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 9, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 11, "status": "confirmed", "will_have_results": False},
                 ]
             },
             4: {  # Published event 2 - 4 participants
                 "bookings": [
-                    {"p_idx": 1, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 3, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 6, "status": "Confirmed", "will_have_results": False},
-                    {"p_idx": 10, "status": "Confirmed", "will_have_results": False},
+                    {"p_idx": 1, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 3, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 6, "status": "confirmed", "will_have_results": False},
+                    {"p_idx": 10, "status": "confirmed", "will_have_results": False},
                 ]
             },
         }
@@ -341,7 +341,7 @@ def seed_all():
                     booking_reference=f"{ev.event_code}-{seq:03d}",
                     booking_status=status,
                     booked_at=datetime.utcnow() - timedelta(days=random.randint(1, 7)),
-                    cancelled_at=datetime.utcnow() if status == "Cancelled" else None,
+                    cancelled_at=datetime.utcnow() if status == "cancelled" else None,
                     time_slot_start=slot_start,
                     time_slot_end=slot_end
                 )
@@ -403,20 +403,20 @@ def seed_all():
         db.commit()
         
         # ============================================================
-        # UPDATE BOOKING STATUS: Checked-in -> Completed (if has results)
+        # UPDATE BOOKING STATUS: checked_in -> completed (if has results)
         # ============================================================
-        print("\n[UPDATE] Marking bookings with results as 'Completed'...")
+        print("\n[UPDATE] Marking bookings with results as 'completed'...")
         
         for bk in bookings_to_complete:
             db.query(booking.Booking).filter(booking.Booking.id == bk.id).update({
-                booking.Booking.booking_status: "Completed"
+                booking.Booking.booking_status: "completed"
             })
-            bk.booking_status = "Completed"
+            bk.booking_status = "completed"
         
         db.commit()
         
-        completed_count = sum(1 for b in all_bookings if b.booking_status == "Completed")
-        print(f"   {completed_count} bookings marked as 'Completed'")
+        completed_count = sum(1 for b in all_bookings if b.booking_status == "completed")
+        print(f"   {completed_count} bookings marked as 'completed'")
         
         # ============================================================
         # UPDATE EVENT AVAILABILITY
@@ -424,12 +424,12 @@ def seed_all():
         print("\n[UPDATE] Updating slot availability...")
         
         for ev in events:
-            active_bookings = sum(1 for b in all_bookings if b.event_id == ev.id and b.booking_status in ["Confirmed", "Checked-in", "Completed"])
+            active_bookings = sum(1 for b in all_bookings if b.event_id == ev.id and b.booking_status in ["confirmed", "checked_in", "completed"])
             
             if ev.time_slots:
                 for slot in ev.time_slots:
                     st = time(int(slot["start"].split(":")[0]), int(slot["start"].split(":")[1]))
-                    booked = sum(1 for b in all_bookings if b.event_id == ev.id and b.booking_status in ["Confirmed", "Checked-in", "Completed"] and b.time_slot_start == st)
+                    booked = sum(1 for b in all_bookings if b.event_id == ev.id and b.booking_status in ["confirmed", "checked_in", "completed"] and b.time_slot_start == st)
                     slot["available"] = max(0, slot["capacity"] - booked)
             
             db.query(event.Event).filter(event.Event.id == ev.id).update({
