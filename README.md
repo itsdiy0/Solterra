@@ -51,6 +51,9 @@ cp .env.example .env
 # Run database migrations
 alembic upgrade head
 
+# Populate sample seed data
+python3 seed_data.py
+
 # Start server
 uvicorn app.main:app --reload
 ```
@@ -76,7 +79,11 @@ npm run dev
 Frontend runs at: `http://localhost:3000`
 >Access the app on: `http://localhost:3000/events`   
 >Participant authentication screen: `http://localhost:3000/auth/login`   
->Admin authentication screen: `http://localhost:3000/admin/login`   
+>Admin authentication screen: `http://localhost:3000/admin/login`
+
+### Test Logins
+Admin 1: `sarah.tan@rosefoundation.my` | `TestPass123!`  
+Admin 2: `nurul.aisyah@rosefoundation.my` | `TestPass123!`
 
 ## Enviornment Variables 
 Don't forget to include your google map API key in frontend .env file : 
